@@ -114,6 +114,7 @@ vm = compute_client.virtual_machines.begin_create_or_update(
                 {
                     "id": "/subscriptions/" + sub_id_1 + "/resourceGroups/" + rg_name_1 + "/providers/Microsoft.Network/networkInterfaces/" + nic_name,
                     "primary": True,
+                    "enableAcceleratedNetworking": True,
                     "delete_option": "Delete"
                 }
             ]
