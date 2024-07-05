@@ -27,6 +27,11 @@ def main():
     load_balancer = network_client.load_balancers.get(rg_name,loadbalacer_name)
     print("Get load balancer:\n{}".format(load_balancer))
     
+    #Get Probe
+    probes = load_balancer.probes
+    for probe in probes:
+        print(probe)
+
     #获得负载均衡器的后端池名称
     #lb_backend_address_pools_name =load_balancer.backend_address_pools[0].name
     #print("Get load balancer Backend Pool:\n{}".format(lb_backend_address_pools_name))

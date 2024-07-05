@@ -18,13 +18,13 @@ sub_id = "166157a8-9ce9-400b-91c7-1d42482b83d6"
 rg_name = "sig-rg"
 vnet_name = "NIO-EU"
 subnet_name = "PROD-EU-AZURE-TOD-FE-VM-01"
-nic_name = "NIO-EU-Hadoop-11-nic"
+nic_name = "NIO-EU-Rocky9-01-nic"
 #创建的虚拟机名称
-vm_name = "NIO-EU-Hadoop-11"
+vm_name = "NIO-EU-Rocky9-01"
 #之前提前创建好vmss，类型必须是Flexible，Initial instance count必须为0
 vmss_name = "NIO-EU-Hadoop-VMSS"
 #计算机名称
-computer_name = "NIO-EU-Hadoop-11"
+computer_name = "NIO-EU-Rocky9-01"
 
 vm_size = "Standard_D2s_v5"
 #os_disk_sku = "Premium_LRS"
@@ -85,12 +85,13 @@ vm = compute_client.virtual_machines.begin_create_or_update(
         "location": location,
         #从get_gallery_image里获得的publisher,name, product，动态的填入下面的plan里
         #如果是ubuntu环境，则把plan内容全部去掉
-        #如果是rocky环境，则不需要注释下面的环境，具体可以参考get_gallery_image.py
+        #如果是rocky 8环境，则不需要注释下面的环境，具体可以参考get_gallery_image.py
         #"plan": {
         #    "name": "free",
         #    "product": "rockylinux",
         #    "publisher": "erockyenterprisesoftwarefoundationinc1653071250513"
         #},
+  
         "zones": [
             "1"
         ],

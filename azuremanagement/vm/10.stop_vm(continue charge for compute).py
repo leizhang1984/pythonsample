@@ -17,8 +17,9 @@ def main():
     )
 
 
-    vm = compute_client.virtual_machines.begin_power_off("lab-rg", "webpublic01").result()
+    vm = compute_client.virtual_machines.begin_power_off("lab-rg", "privatevm2019").result()
     print("Stop virtual machine. Please note this vm will continue charge for compute")
+    print(vm)
 
 
 if __name__ == '__main__':
