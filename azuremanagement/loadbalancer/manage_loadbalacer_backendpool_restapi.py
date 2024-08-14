@@ -40,7 +40,7 @@ def main():
     #loadbalancer_name = "NIO-EU-Hadoop-VMSS-2LB-IP01"
     
     #后端池需要删除的IP地址
-    #remove_ip = "10.99.76.14"
+    remove_ip = "10.99.76.14"
 
     #后端池需要删除的虚拟机名称
     backendvm_name = "NIO-EU-pv2-03"
