@@ -29,13 +29,13 @@ def main():
     print("Get VNet:\n{}".format(vnet))
 
 
-    usages =network_client.virtual_networks.list_usage(rg_name,vnet_name)
+    usages = network_client.virtual_networks.list_usage(rg_name,vnet_name)
     #遍历virtual network的所有子网
     for usage in usages:
-        print("子网id:{}".format(usage.id))
-        print("subnet Total IP:{}".format(usage.limit))
-        print("subnet Used IP:{}".format(usage.current_value))
-        print("subnet Available IP:{}".format(usage.limit-usage.current_value))
+        subnet_name = usage.id.split("subnets/")[1]
+        subnet = network_client.subnets.get(rg_name,vnet_name,subnet_name)
+        print("Subnet Name is:{}".format(subnet_name))
+        print("Subnet Address Prefix is:{}".format(subnet.address_prefix))
 
 
         
