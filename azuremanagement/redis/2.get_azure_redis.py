@@ -3,14 +3,14 @@ from azure.identity import DefaultAzureCredential,ClientSecretCredential
 from azure.mgmt.redis import RedisManagementClient
 from azure.mgmt.network import NetworkManagementClient
 
-tenantid = os.environ.get('tenantid')
-clientid = os.environ.get('clientid')
-clientsecret = os.environ.get('clientsecret')
+tenantid = os.environ.get('nonprod_tenantid')
+clientid = os.environ.get('nonprod_clientid')
+clientsecret = os.environ.get('nonprod_clientsecret')
 
 def main():
-    rg_name = "default-rg"
-    redisname = "s-azure-test"
-    subscription_id = '074b8f7e-9eb5-4c38-b5f9-a39cf7876bdb'
+    rg_name = "defaultrg"
+    redisname = "leiredisppp"
+    subscription_id = '166157a8-9ce9-400b-91c7-1d42482b83d6'
 
     clientcredential = ClientSecretCredential(tenantid,clientid,clientsecret)
     redisclient = RedisManagementClient(credential = clientcredential, subscription_id = subscription_id)

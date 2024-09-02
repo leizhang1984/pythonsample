@@ -43,8 +43,13 @@ def main():
           "redis_version": "latest",
           "enable_non_ssl_port": True,
           "public_network_access": "Enabled",
-          "disable_access_key_authentication": "Disabled",
-          "minimum_tls_version": "1.2"
+          "disable_access_key_authentication": False,
+          "minimum_tls_version": "1.2",
+          "tags": {
+            "SKU": "Standard",
+            "Service Id": "0001",
+            "Cost Center": "0002"
+          }
         }
     ).result()
 

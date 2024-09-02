@@ -32,11 +32,15 @@ def main():
         redisname,
         {
           "location": location,
-          #Premium可以指定Availability Zone
+          #只有Premium，才可以指定Availability Zone
           "zones": [
             "1",
-            "2"
+            "2",
+            "3"
           ],
+          #replicas_per_master 必须是2或者3,  zones才支持设设置为1,2,3
+          # If both replicas_per_primary and replicas_per_master are set, they need to be equal.
+          "replicas_per_master": 3,
           #SKU为Premium P1, 6GB
           #具体的SKU可以参考：https://azure.microsoft.com/zh-cn/pricing/details/cache/
           "sku": {
@@ -47,8 +51,13 @@ def main():
           "redis_version": "latest",
           "enable_non_ssl_port": True,
           "public_network_access": "Enabled",
-          "disable_access_key_authentication": "Disabled",
-          "minimum_tls_version": "1.2"
+          "disable_access_key_authentication": False,
+          "minimum_tls_version": "1.2",
+          "tags": {
+            "SKU": "Premium",
+            "Service Id": "0001",
+            "Cost Center": "0002"
+          }
         }
     ).result()
 

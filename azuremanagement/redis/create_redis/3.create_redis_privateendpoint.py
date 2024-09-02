@@ -8,7 +8,8 @@ from azure.mgmt.resource import ResourceManagementClient
 '''
 https://learn.microsoft.com/en-us/python/api/azure-mgmt-redis/azure.mgmt.redis.models.rediscreateparameters?view=azure-python
 
-1.先创建网卡资源
+1.请先提前创建好Redis
+2.再执行这个代码
 
 
 '''
@@ -26,11 +27,11 @@ def main():
     location = "germanywestcentral"
 
     #之前创建好的Redis名称
-    redis_name = "leiredisstd01"
+    redis_name = "leiredispremium01"
     #新建的链接名称
-    pvt_endpoint_name = "leiredisstd01-pvtendpoint2"
+    pvt_endpoint_name = redis_name + "-pvtendpoint"
     #新建链接的时候，会创建1个网卡，设置网卡的名称
-    pvt_endpont_nic_name = "leiredisstd01-pvtendpoint2-nic"
+    pvt_endpont_nic_name = pvt_endpoint_name + "-nic"
 
     #之前创建好的Virtual Network Name
     vnet_name = "defaultrg-vnet"
@@ -135,6 +136,7 @@ def main():
         },
     ).result()
     print(response)
+    print("创建完毕")
 
 
 if __name__ == '__main__':
