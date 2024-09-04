@@ -6,7 +6,7 @@ from azure.mgmt.network import NetworkManagementClient
 '''
 https://learn.microsoft.com/en-us/python/api/azure-mgmt-redis/azure.mgmt.redis.models.rediscreateparameters?view=azure-python
 
-1.先创建Redis Cache, 设置SKU为Standard
+1.先创建Redis Cache, 设置SKU为Premium
 2.创建完毕后, 再private Endpoint link到redis子网上
 
 '''
@@ -17,15 +17,14 @@ def main():
     clientsecret = os.environ.get('nonprod_clientsecret')
 
     rg_name = "defaultrg"
-    redisname = "leiredisstd01"
+    redisname = "leiredispremium01"
     subscription_id = '166157a8-9ce9-400b-91c7-1d42482b83d6'
-
-    #设置数据中心区域
-    location = "germanywestcentral"
 
     clientcredential = ClientSecretCredential(tenantid,clientid,clientsecret)
     redisclient = RedisManagementClient(credential = clientcredential, subscription_id = subscription_id)
     
+    #设置数据中心区域
+    location = "germanywestcentral"
 
     #创建Redis Standard
     redis = redisclient.redis.begin_create(
@@ -33,11 +32,16 @@ def main():
         redisname,
         {
           "location": location,
-          #SKU为Standard C1, 1GB
+          #Premium可以指定Availability Zone
+          "zones": [
+            "1",
+            "2"
+          ],
+          #SKU为Premium P1, 6GB
           #具体的SKU可以参考：https://azure.microsoft.com/zh-cn/pricing/details/cache/
           "sku": {
-            "name": "Standard",
-            "family": "C",
+            "name": "Premium",
+            "family": "P",
             "capacity": "1"
           },
           "redis_version": "latest",

@@ -45,6 +45,7 @@ def main():
             "value": [
                 {"name": "event_scheduler", "properties": {"value": "OFF"}},
                 {"name": "require_secure_transport", "properties": {"value": "OFF"}},
+                {"name": "connect_timeout", "properties": {"value": "30"}},
                 {"name": "sql_mode", "properties": {"value": "ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ZERO_DATE,NO_ZERO_IN_DATE,ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES"}},
             ],
         },
