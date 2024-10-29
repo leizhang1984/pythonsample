@@ -1,5 +1,6 @@
 import os
 from azure.identity import DefaultAzureCredential,ClientSecretCredential
+#pip3 install azure-storage-blob
 from azure.storage.blob import BlobServiceClient
 
 #pip3 install azure-storage-blob

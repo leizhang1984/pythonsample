@@ -11,9 +11,9 @@ clientsecret = os.environ.get('clientsecret')
 
 def main():
 
-    SUBSCRIPTION_ID = "166157a8-9ce9-400b-91c7-1d42482b83d6"
+    SUBSCRIPTION_ID = "b5aa1700-1510-4f35-b134-fe9c7c695df1"
     GROUP_NAME = "test-rg"
-    STORAGE_ACCOUNT = "leiteststorage002"
+    STORAGE_ACCOUNT = "leizhangstorage00"
     location = "germanywestcentral"
     blobcontainer_name = "privatecontainer"
 
@@ -37,6 +37,7 @@ def main():
     # )
 
     # Create storage account
+    '''
     storage_account = storage_client.storage_accounts.begin_create(
         GROUP_NAME,
         STORAGE_ACCOUNT,
@@ -77,7 +78,8 @@ def main():
         {}
     )
     print("Create blob container:\n{}".format(blob_container))
-
+    '''
+    
     # Get blob container
     blob_container = storage_client.blob_containers.get(
         GROUP_NAME,

@@ -72,18 +72,20 @@ def main():
                 "administratorLogin": "mysqladmin",
                 "administratorLoginPassword": "Thisis@mypassword123456",
                 #主服务器，在可用区1
-                "availabilityZone": "1",
+                #如果设置 "availabilityZone": "",为空，则在任意一个可用区部署
+                "availabilityZone": "",
                 "backup": {"backupRetentionDays": 7, "geoRedundantBackup": "Disabled"},
                 "createMode": "Default",
                 #高可用服务器，在可用区3
-                "highAvailability": {"mode": "ZoneRedundant", "standbyAvailabilityZone": "3"},
+                #如果设置 "availabilityZone": "",为空，则在任意一个可用区部署
+                "highAvailability": {"mode": "ZoneRedundant", "standbyAvailabilityZone": ""},
                 "storage": {
                     "autoGrow": "Enabled",
                     "iops": 600,
                     "storageRedundancy": "LocalRedundancy",
                     "storageSizeGB": 100,
                 },
-                "version": "5.7",
+                "version": "8.0.21",
                 "network":{
                     #不允许公网访问
                     "public_network_access": "Disabled",

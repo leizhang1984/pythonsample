@@ -34,5 +34,13 @@ def main():
 
 
 
+    #2024-10-28，创建完Private DNS Zone后，需要link到Virtual Network
+    #对于MySQL RDS来说需要Link到2个VPC，因为MySQL RDS新建了Private DNS Zone
+    #对于Redis来说不需要Link，因为Redis不需要新建Private DNS Zone
+
+
+    privatedns_management_client.virtual_network_links.list()
+
+
 if __name__ == "__main__":
     main()
