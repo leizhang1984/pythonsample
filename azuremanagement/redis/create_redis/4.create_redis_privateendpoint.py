@@ -100,7 +100,7 @@ def main():
 
     #先找到private dns zone所在的资源组名称
     #有可能和redis不在一个资源组里
-    dd_privatednszone_rg_name = "sig-rg"
+
     #不要修改下面的值
     dd_privatednszone_name = "privatelink.redis.cache.windows.net"
 
@@ -108,7 +108,7 @@ def main():
     privatednszone_group_name = "privatelink-redis-cache-windows-net"
     privatednszone_group_fqdn_name = pe_redis_name + "." + dd_privatednszone_name
 
-    dd_private_dnszone = privatezone_client.private_zones.get(dd_privatednszone_rg_name,dd_privatednszone_name)
+    dd_private_dnszone = privatezone_client.private_zones.get(dd_rg_name,dd_privatednszone_name)
     dd_private_dnszone_id = dd_private_dnszone.id
 
     # https://learn.microsoft.com/en-us/python/api/azure-mgmt-network/azure.mgmt.network.operations.privatednszonegroupsoperations?view=azure-python
