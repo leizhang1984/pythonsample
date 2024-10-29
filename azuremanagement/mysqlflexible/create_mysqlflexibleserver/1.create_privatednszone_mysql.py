@@ -29,17 +29,21 @@ def main():
     )
 
  
+    #DD订阅，资源组名称
+    dd_rgname = "sig-rg"
+    #DD订阅，要创建的Private DNSZone名称
+    dd_privatednzone_name = "leizhangproduction-02.private.mysql.database.azure.com"
+
 
     #PE订阅，资源组名称
     pe_rgname = "sig-rg"
     #PE要建立Virtual Network的VPC名称
     pe_virtualnetwork_name = "NIO-PE-EU"
-    #PE订阅，要创建的Private DNSZone名称
-    pe_privatednzone_name = "leizhangproduction-02.private.mysql.database.azure.com"
 
-    #首先在PE订阅下，新建Private DNS Zone
-    response = pe_privatedns_management_client.private_zones.begin_create_or_update(
-        pe_rgname, pe_privatednzone_name, parameters={"location": "Global", "tags": {"key1": "value1"}},
+
+    #首先在DD订阅下，新建Private DNS Zone
+    response = dd_privatedns_management_client.private_zones.begin_create_or_update(
+        dd_rgname, dd_privatednzone_name, parameters={"location": "Global", "tags": {"key1": "value1"}},
     ).result()
 
     print(response)
@@ -54,7 +58,7 @@ def main():
 
     pe_privatedns_management_client.virtual_network_links.begin_create_or_update(
         resource_group_name = pe_rgname,
-        private_zone_name = pe_privatednzone_name,
+        private_zone_name = dd_privatednzone_name,
         virtual_network_link_name = "link-pe-eu",
         parameters={
             "location": "Global",
@@ -83,7 +87,7 @@ def main():
 
     dd_privatedns_management_client.virtual_network_links.begin_create_or_update(
         resource_group_name = pe_rgname,
-        private_zone_name = pe_privatednzone_name,
+        private_zone_name = dd_privatednzone_name,
         virtual_network_link_name = "link-dd-eu-ops",
         parameters={
             "location": "Global",

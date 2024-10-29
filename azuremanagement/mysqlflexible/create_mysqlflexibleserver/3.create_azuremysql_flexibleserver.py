@@ -19,7 +19,7 @@ def main():
     clientid = os.environ.get('nonprod_clientid')
     clientsecret = os.environ.get('nonprod_clientsecret')
 
-    #这里要设置订阅名称
+    #这里要设置PE订阅名称
     subscription_id = "166157a8-9ce9-400b-91c7-1d42482b83d6"
 
    # Create client

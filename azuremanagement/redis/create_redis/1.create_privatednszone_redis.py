@@ -22,24 +22,14 @@ def main():
     #资源组名称
     rgname = "defaultrg"
     #要创建的Private DNSZone名称
-    privatednzone_name = "leizhangproduction-01.private.mysql.database.azure.com"
+    privatednzone_name = "privatelink.redis.cache.windows.net"
 
     #因为不建议在PE订阅下创建Private DNS Zone
     #所以，列出该订阅下，所有的Private DNS
-    response = privatedns_management_client.private_zones.begin_create_or_update(
-        rgname, privatednzone_name, parameters={"location": "Global", "tags": {"key1": "value1"}},
-    ).result()
+    privatednszone = privatedns_management_client.private_zones.get(rgname, privatednzone_name)
 
-    print(response)
-
-
-
-    #2024-10-28，创建完Private DNS Zone后，需要link到Virtual Network
-    #对于MySQL RDS来说需要Link到2个VPC，因为MySQL RDS新建了Private DNS Zone
-    #对于Redis来说不需要Link，因为Redis不需要新建Private DNS Zone
-
-
-    privatedns_management_client.virtual_network_links.list()
+    if privatednszone is None:
+        
 
 
 if __name__ == "__main__":
