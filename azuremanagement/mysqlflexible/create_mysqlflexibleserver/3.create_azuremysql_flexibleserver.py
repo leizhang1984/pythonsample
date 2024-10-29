@@ -35,12 +35,12 @@ def main():
         subscription_id=subscription_id
     )
     #资源组名称
-    rgname = "defaultrg"
+    rgname = "sig-rg"
 
     #找到之前创建的虚拟网络名称
-    virtualnetwork_name = "defaultrg-vnet"
+    virtualnetwork_name = "NIO-PE-EU"
     #子网名称
-    subnet_name = "mysql_subnet"
+    subnet_name = "STG-EU-AZURE-PE-BE-MYSQL-01"
     subnet = network_client.subnets.get(rgname,virtualnetwork_name,subnet_name)
     subnet_id = subnet.id
 
@@ -54,8 +54,6 @@ def main():
 
     #MySQl Flexible Server服务器名称，需要和上面的Private DNS Zone名称一致
     mysqlflexible_servername = "leizhangproduction-01"
-    # Create client
-    clientcredential = ClientSecretCredential(tenantid,clientid,clientsecret)
 
     # Create MySQL Client
     mysqlflexiblesvr_client = MySQLManagementClient(
@@ -81,7 +79,7 @@ def main():
                 "highAvailability": {"mode": "ZoneRedundant", "standbyAvailabilityZone": ""},
                 "storage": {
                     "autoGrow": "Enabled",
-                    "iops": 600,
+                    #"iops": "600",
                     "storageRedundancy": "LocalRedundancy",
                     "storageSizeGB": 100,
                 },
@@ -100,6 +98,9 @@ def main():
         },
     ).result()
     print(response)
+
+
+
 
 if __name__ == "__main__":
     main()
