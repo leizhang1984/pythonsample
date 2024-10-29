@@ -20,7 +20,7 @@ def main():
     
     subscription_id = '166157a8-9ce9-400b-91c7-1d42482b83d6'
     #资源组名称
-    rg_name = "defaultrg"
+    rg_name = "sig-rg"
     
     #设置数据中心区域
     location = "germanywestcentral"
@@ -28,15 +28,15 @@ def main():
     #之前创建好的Redis名称
     redis_name = "leiredisstd01"
     #新建的链接名称
-    pvt_endpoint_name = "leiredisstd01-pvtendpoint2"
+    pvt_endpoint_name = redis_name + "-pvtendpoint"
     #新建链接的时候，会创建1个网卡，设置网卡的名称
-    pvt_endpont_nic_name = "leiredisstd01-pvtendpoint2-nic"
+    pvt_endpont_nic_name =  pvt_endpoint_name +"-nic"
 
     #之前创建好的Virtual Network Name
-    vnet_name = "defaultrg-vnet"
+    vnet_name = "NIO-PE-EU"
 
     #之前创建好的subnet name
-    subnet_name = "redis-subnet"
+    subnet_name = "STG-EU-AZURE-PE-BE-REDIS-01"
 
     #实例化对象
     clientcredential = ClientSecretCredential(tenantid,clientid,clientsecret)
@@ -92,7 +92,7 @@ def main():
 
     #先找到private dns zone所在的资源组名称
     #有可能和redis不在一个资源组里
-    privatednszone_rg_name = "defaultrg"
+    privatednszone_rg_name = "sig-rg"
     #不要修改下面的值
     privatednszone_name = "privatelink.redis.cache.windows.net"
 
