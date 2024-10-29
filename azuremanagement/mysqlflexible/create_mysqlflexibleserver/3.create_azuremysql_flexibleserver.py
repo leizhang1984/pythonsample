@@ -79,7 +79,7 @@ def main():
                 "highAvailability": {"mode": "ZoneRedundant", "standbyAvailabilityZone": ""},
                 "storage": {
                     "autoGrow": "Enabled",
-                    #"iops": "600",
+                    "iops": "600",
                     "storageRedundancy": "LocalRedundancy",
                     "storageSizeGB": 100,
                 },
