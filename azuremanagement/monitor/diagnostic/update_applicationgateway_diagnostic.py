@@ -99,7 +99,7 @@ print("Diagnostic settings configured successfully.")
     ],
 包含所有的Log
 
-如果要制定某些Logs, 请参考下面的参数
+如果要指定某些Logs, 请参考下面的参数
 diagnostic_settings = DiagnosticSettingsResource(
     storage_account_id=None,
     event_hub_authorization_rule_id=event_hub_authorization_rule_id,
