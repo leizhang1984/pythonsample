@@ -13,20 +13,17 @@ def main():
     clientid = os.environ.get('nonprod_clientid')
     clientsecret = os.environ.get('nonprod_clientsecret')
 
+
     #这里要设置订阅名称
-    subscription_id = "166157a8-9ce9-400b-91c7-1d42482b83d6"
+    pe_subscription_id = "c4959ac6-4963-4b67-90dd-da46865b607f"
 
    # Create client
     clientcredential = ClientSecretCredential(tenantid,clientid,clientsecret)
 
-    privatedns_management_client = PrivateDnsManagementClient(
-        credential=clientcredential,
-        subscription_id=subscription_id
-    )
     #资源组名称
-    rgname = "sig-rg"
+    rgname = "defaultrg"
     #MySQL Flexible Server Name
-    mysqlflexible_servername = "leizhangproduction-01"
+    mysqlflexible_servername = "leizhangproduction-00"
 
     # Create client
     clientcredential = ClientSecretCredential(tenantid,clientid,clientsecret)
@@ -34,7 +31,7 @@ def main():
     # Create MySQL Client
     mysqlflexiblesvr_client = MySQLManagementClient(
         credential=clientcredential,
-        subscription_id=subscription_id
+        subscription_id=pe_subscription_id
     )
 
     response = mysqlflexiblesvr_client.configurations.begin_batch_update(
@@ -58,8 +55,10 @@ def main():
         },
     ).result()
     print(response)
+    #参数如果是Dynamic的，就不要重启服务器
 
-    #按照需要，对MySQL数据库进行重启
+
+    #参数如果是Static的，对MySQL数据库进行重启
     #response = mysqlflexiblesvr_client.servers.begin_restart(rgname,mysqlflexible_servername).result()
     #print(response)
 

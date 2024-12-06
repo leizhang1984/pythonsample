@@ -15,22 +15,23 @@ def main():
     tenantid = os.environ.get('nonprod_tenantid')
     clientid = os.environ.get('nonprod_clientid')
     clientsecret = os.environ.get('nonprod_clientsecret')
-    
-    #PE的订阅ID
-    pe_subscription_id = '166157a8-9ce9-400b-91c7-1d42482b83d6'
+
+    #这里要设置PE订阅ID
+    pe_subscription_id = "c4959ac6-4963-4b67-90dd-da46865b607f"
+
     #PE的资源组名称
-    pe_rg_name = "sig-rg"
+    pe_rg_name = "defaultrg"
 
     #DD的订阅ID
-    dd_subscription_id = '166157a8-9ce9-400b-91c7-1d42482b83d6'
+    dd_subscription_id = "074b8f7e-9eb5-4c38-b5f9-a39cf7876bdb"
     #DD的资源组名称
-    dd_rg_name = "sig-rg"
+    dd_rg_name = "defaultrg"
     
     #设置数据中心区域
     location = "germanywestcentral"
 
     #之前创建好的MySQL名称
-    mysql_name = "leizhangproduction-01"
+    mysql_name = "leizhangproduction-00"
     #新建的链接名称
     pe_pvt_endpoint_name = mysql_name + "-pvtendpoint"
     #新建链接的时候，会创建1个网卡，设置网卡的名称
@@ -40,7 +41,7 @@ def main():
     pe_vnet_name = "NIO-PE-EU"
 
     #之前创建好的subnet name
-    pe_subnet_name = "STG-EU-AZURE-PE-BE-MYSQL-02"
+    pe_subnet_name = "STG-EU-AZURE-PE-BE-MYSQL-01"
 
     #自定义标签
     custom_tags = {
@@ -53,17 +54,17 @@ def main():
 
     #实例化对象
     mysql_client = MySQLManagementClient(credential=clientcredential,subscription_id=pe_subscription_id)
-    network_client =  NetworkManagementClient(credential = clientcredential, subscription_id = pe_subscription_id)
+    pe_network_client =  NetworkManagementClient(credential = clientcredential, subscription_id = pe_subscription_id)
 
     #Private DNS Zone创建在DD订阅里
-    privatezone_client = PrivateDnsManagementClient(credential = clientcredential, subscription_id = dd_subscription_id)
+    dd_privatedns_management_client = PrivateDnsManagementClient(credential = clientcredential, subscription_id = dd_subscription_id)
 
     #1.先获得MySQL的资源ID
     mysql = mysql_client.servers.get(pe_rg_name,mysql_name)
     mysql_id = mysql.id
 
     #2.再获得MySQL链接到的Virtual Network的信息，还有子网的信息
-    subnet = network_client.subnets.get(pe_rg_name,pe_vnet_name,pe_subnet_name)
+    subnet = pe_network_client.subnets.get(pe_rg_name,pe_vnet_name,pe_subnet_name)
     subnet_id = subnet.id
 
     #这里写死 mysqlServer
@@ -71,7 +72,7 @@ def main():
     group_ids = list(mysqlserver.split(" "))
 
     #3.创建Private Link Endpoint
-    response = network_client.private_endpoints.begin_create_or_update(
+    response = pe_network_client.private_endpoints.begin_create_or_update(
         pe_rg_name,
         pe_pvt_endpoint_name,
         {
@@ -95,7 +96,7 @@ def main():
     print(response)
     
     #4. 先拿到Private Endpoint里面已经设置好的内网IP地址
-    pvt_endpoint = network_client.private_endpoints.get(pe_rg_name,pe_pvt_endpoint_name)
+    pvt_endpoint = pe_network_client.private_endpoints.get(pe_rg_name,pe_pvt_endpoint_name)
     pvt_endpoint_privateip = pvt_endpoint.custom_dns_configs[0].ip_addresses[0]
     pvt_endpoint_privateip_list = list(pvt_endpoint_privateip.split(" "))
 
@@ -114,12 +115,12 @@ def main():
     privatednszone_group_name = "privatelink-mysql-database-azure-com"
     privatednszone_group_fqdn_name = mysql_name + "." + dd_privatednszone_name
 
-    dd_private_dnszone = privatezone_client.private_zones.get(dd_rg_name,dd_privatednszone_name)
+    dd_private_dnszone = dd_privatedns_management_client.private_zones.get(dd_rg_name,dd_privatednszone_name)
     dd_private_dnszone_id = dd_private_dnszone.id
 
     # https://learn.microsoft.com/en-us/python/api/azure-mgmt-network/azure.mgmt.network.operations.privatednszonegroupsoperations?view=azure-python
 
-    response = network_client.private_dns_zone_groups.begin_create_or_update(
+    response = pe_network_client.private_dns_zone_groups.begin_create_or_update(
         dd_rg_name,
         pe_pvt_endpoint_name,
         #设置name 为 default

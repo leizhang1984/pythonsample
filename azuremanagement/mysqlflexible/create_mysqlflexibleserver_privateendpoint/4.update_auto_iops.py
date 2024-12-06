@@ -15,14 +15,18 @@ def main():
     clientid = os.environ.get('nonprod_clientid')
     clientsecret = os.environ.get('nonprod_clientsecret')
 
-    #这里要设置订阅名称
-    subscription_id = "166157a8-9ce9-400b-91c7-1d42482b83d6"
+
+    #这里要设置PE订阅ID
+    pe_subscription_id = "c4959ac6-4963-4b67-90dd-da46865b607f"
+
+    #DD的订阅ID
+    dd_subscription_id = "074b8f7e-9eb5-4c38-b5f9-a39cf7876bdb"
 
      #资源组名称
-    rgname = "sig-rg"
+    rgname = "defaultrg"
 
     #MySQl Flexible Server服务器名称，需要和上面的Private DNS Zone名称一致
-    mysqlflexible_servername = "leizhangproduction-01"
+    mysqlflexible_servername = "leizhangproduction-00"
 
     # Create client
     clientcredential = ClientSecretCredential(tenantid,clientid,clientsecret)
@@ -30,7 +34,7 @@ def main():
     # Create MySQL Client
     mysqlflexiblesvr_client = MySQLManagementClient(
         credential=clientcredential,
-        subscription_id=subscription_id
+        subscription_id=pe_subscription_id
     )
 
      # 1.先获得Access Token

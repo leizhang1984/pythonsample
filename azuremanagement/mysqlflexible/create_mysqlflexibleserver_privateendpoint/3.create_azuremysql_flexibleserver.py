@@ -19,41 +19,42 @@ def main():
     clientid = os.environ.get('nonprod_clientid')
     clientsecret = os.environ.get('nonprod_clientsecret')
 
-    #这里要设置PE订阅名称
-    subscription_id = "166157a8-9ce9-400b-91c7-1d42482b83d6"
+    #这里要设置PE订阅ID
+    pe_subscription_id = "c4959ac6-4963-4b67-90dd-da46865b607f"
+
+    #DD的订阅ID
+    dd_subscription_id = "074b8f7e-9eb5-4c38-b5f9-a39cf7876bdb"
 
    # Create client
     clientcredential = ClientSecretCredential(tenantid,clientid,clientsecret)
 
-    network_client = NetworkManagementClient(
+    pe_network_client = NetworkManagementClient(
         credential=clientcredential,
-        subscription_id=subscription_id
+        subscription_id = pe_subscription_id
     )
 
-    privatedns_management_client = PrivateDnsManagementClient(
+    dd_privatedns_management_client = PrivateDnsManagementClient(
         credential=clientcredential,
-        subscription_id=subscription_id
+        subscription_id=dd_subscription_id
     )
     #资源组名称
-    rgname = "sig-rg"
+    rgname = "defaultrg"
 
     #找到之前创建的虚拟网络名称
     virtualnetwork_name = "NIO-PE-EU"
     #子网名称
     subnet_name = "STG-EU-AZURE-PE-BE-MYSQL-01"
-    subnet = network_client.subnets.get(rgname,virtualnetwork_name,subnet_name)
+    subnet = pe_network_client.subnets.get(rgname,virtualnetwork_name,subnet_name)
     subnet_id = subnet.id
 
     #找到之前创建的Private DNS Zone
     privatednzone_name = "privatelink.mysql.database.azure.com"
-    privatre_dnszone = privatedns_management_client.private_zones.get(rgname, privatednzone_name)
+    privatre_dnszone = dd_privatedns_management_client.private_zones.get(rgname, privatednzone_name)
     #获得这个Private DNS Zone ID
     private_dnszone_id = privatre_dnszone.id
 
-
-
     #MySQl Flexible Server服务器名称，随意输入
-    mysqlflexible_servername = "leizhangproduction-01"
+    mysqlflexible_servername = "leizhangproduction-00"
 
     #自定义标签
     custom_tags = {
@@ -64,8 +65,11 @@ def main():
     # Create MySQL Client
     mysqlflexiblesvr_client = MySQLManagementClient(
         credential=clientcredential,
-        subscription_id=subscription_id
+        subscription_id=pe_subscription_id
     )
+
+    #检查MySQL Flexible Server是否存在
+    #response = mysqlflexiblesvr_client.servers.get(rgname,mysqlflexible_servername)
 
     response = mysqlflexiblesvr_client.servers.begin_create(
         rgname,
