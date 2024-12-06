@@ -76,7 +76,7 @@ def main():
                     "id": dd_virtualnetwork.id
                 },
             },
-            "tags": {custom_tags},
+            "tags": custom_tags,
         },
     ).result()
 
