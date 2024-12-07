@@ -4,6 +4,7 @@
 '''
 import os
 import time
+import sys
 
 from azure.identity import DefaultAzureCredential,ClientSecretCredential
 from azure.mgmt.network import NetworkManagementClient
@@ -11,6 +12,7 @@ from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.compute.models import (HardwareProfile, OSProfile, StorageProfile,
                                        ImageReference, NetworkProfile, NetworkInterfaceReference,
                                        VirtualMachine, SshConfiguration, SshPublicKey)
+from azure.core.exceptions import ResourceNotFoundError
 
 
 tenantid = os.environ.get('nonprod_tenantid')
@@ -57,7 +59,6 @@ StandardSSD_LRS 表示 Standard SSD
 Premium_LRS 表示 Premium SSD
 PremiumV2_LRS 表示SSD v2
 '''
-
 
 #操作系统盘只能是Premium_LRS和Standard_LRS
 os_disk_sku = "Premium_LRS"
@@ -109,254 +110,262 @@ compute_client = ComputeManagementClient(
     credential = clientcredential,
     subscription_id = sub_id
 )
+################################
+###  1.先判断虚拟机是否存在，存在则直接退出
+################################
+try:
+    exist = compute_client.virtual_machines.get(rg_name,vm_name)
+    print(f"虚拟机 '{vm_name}' 存在。")
+    sys.exit(0)
+except ResourceNotFoundError:
 
-################################
-###  1.先获得SSH Key
-################################
-ssh_key = compute_client.ssh_public_keys.get(rg_name,ssh_public_key_name)
-ssh_public_key = ssh_key.public_key
+    ################################
+    ###  12.先获得SSH Key
+    ################################
+    ssh_key = compute_client.ssh_public_keys.get(rg_name,ssh_public_key_name)
+    ssh_public_key = ssh_key.public_key
 
 
-################################
-###  2.创建数据盘01
-###  这里先指定数据盘为空盘
-###  默认情况下，高级 SSD v2 支持 4k 物理扇区大小，但也可以配置为使用 512 字节扇区大小。 
-###  大多数应用程序都与 4k 扇区大小兼容，但某些应用程序需要 512 字节扇区大小。 
-###  例如，Oracle Database 需要 12.2 版或更高版本才能支持 4k 本机磁盘。
-################################
-start_time = time.time()
-data_disk01 = compute_client.disks.begin_create_or_update(
-    resource_group_name = rg_name,
-    disk_name = data_disk01_name,
-    disk = {
-        "location": location,
-        "zones": [
-            availabiltiy_zone
-        ],
-        "sku": {
-            "name": data_disk01_sku 
-        },
-        "creation_data": {
-            "create_option": "Empty",
-             # 这里指定扇区大小为512 字节
-            "logical_sector_size": 512
-        },
-        "disk_size_gb": data_disk_size_gb,
-        "disk_iops_read_write": data_disk_iops,
-        "disk_m_bps_read_write": data_disk_mbps
-    }
-).result()
-print("--- %s seconds ---" % (time.time() - start_time))
-print("Create data disk 01:")
-
-################################
-###  3.创建数据盘02
-################################
-start_time = time.time()
-data_disk02 = compute_client.disks.begin_create_or_update(
-    resource_group_name = rg_name,
-    disk_name = data_disk02_name,
-    disk = {
-        "location": location,
-        "zones": [
-            availabiltiy_zone
-        ],
-        "sku": {
-             "name": data_disk02_sku
-        },
-        "creation_data": {
-            "create_option": "Empty",
-             # 这里指定扇区大小为512 字节
-            "logical_sector_size": 512
-        },
-        "disk_size_gb": data_disk_size_gb,
-        "disk_iops_read_write": data_disk_iops,
-        "disk_m_bps_read_write": data_disk_mbps
-    }
-).result()
-
-print("--- %s seconds ---" % (time.time() - start_time))
-print("Create data disk 02:")
-
-################################
-#4.创建安全组
-################################
-start_time = time.time()
-nic_nsg_result = network_client.network_security_groups.begin_create_or_update(
-    rg_name,
-    nic_nsgname,
-    {
-        'location': location,
-        'security_rules': [
-            {
-                'name': 'Allow-Internet-HTTP-Inbound',
-                'protocol': 'Tcp',
-                'direction': 'Inbound',
-                'source_address_prefix': '*',
-                'destination_address_prefix': '*',
-                'access': 'Allow',
-                'destination_port_range': '80',
-                'source_port_range': '*',
-                'priority': 3000
+    ################################
+    ###  3.创建数据盘01
+    ###  这里先指定数据盘为空盘
+    ###  默认情况下，高级 SSD v2 支持 4k 物理扇区大小，但也可以配置为使用 512 字节扇区大小。 
+    ###  大多数应用程序都与 4k 扇区大小兼容，但某些应用程序需要 512 字节扇区大小。 
+    ###  例如，Oracle Database 需要 12.2 版或更高版本才能支持 4k 本机磁盘。
+    ################################
+    start_time = time.time()
+    data_disk01 = compute_client.disks.begin_create_or_update(
+        resource_group_name = rg_name,
+        disk_name = data_disk01_name,
+        disk = {
+            "location": location,
+            "zones": [
+                availabiltiy_zone
+            ],
+            "sku": {
+                "name": data_disk01_sku 
             },
-            {
-                'name': 'Allow-Internet-HTTPS-Inbound',
-                'protocol': 'Tcp',
-                'direction': 'Inbound',
-                'source_address_prefix': '*',
-                'destination_address_prefix': '*',
-                'access': 'Allow',
-                'destination_port_range': '443',
-                'source_port_range': '*',
-                'priority': 3001
-            }
-        ]
-    }
-).result()
-print("--- %s seconds ---" % (time.time() - start_time))
-print("Create NIC Network Security Group:")
-
-################################
-#5.创建网卡，并附加安全组
-################################
-
-start_time = time.time()
-nic = network_client.network_interfaces.begin_create_or_update(
-    resource_group_name = rg_name,
-    network_interface_name = nic_name,
-    parameters = {
-        "location": location,
-        "ip_configurations": [{
-            "name": "nic-ip-config",
-            "subnet": {
-                "id": "/subscriptions/" + sub_id + "/resourceGroups/" + rg_name + "/providers/Microsoft.Network/virtualNetworks/" + vnet_name + "/subnets/" + subnet_name
+            "creation_data": {
+                "create_option": "Empty",
+                # 这里指定扇区大小为512 字节
+                "logical_sector_size": 512
             },
-            "private_ip_allocation_method": "Dynamic"
-        }],
-        "network_security_group": {
-            'id': nic_nsg_result.id
-            #/subscriptions/c4959ac6-4963-4b67-90dd-da46865b607f/resourceGroups/DEFAULTRG/providers/Microsoft.Network/networkSecurityGroups/NIO_PE_OPS
-        },
-        "enable_accelerated_networking": True,
-        "tags": custom_tags
-    }
-).result()
-print("--- %s seconds ---" % (time.time() - start_time))
-print("Created NIC:\n{}".format(nic))
+            "disk_size_gb": data_disk_size_gb,
+            "disk_iops_read_write": data_disk_iops,
+            "disk_m_bps_read_write": data_disk_mbps
+        }
+    ).result()
+    print("--- %s seconds ---" % (time.time() - start_time))
+    print("Create data disk 01:")
 
-
-
-################################
-#6.创建虚拟机
-################################
-start_time = time.time()
-vm = compute_client.virtual_machines.begin_create_or_update(
-    resource_group_name = rg_name,
-    vm_name = vm_name,
-    parameters = {
-        "location": location,
-        #从get_gallery_image里获得的publisher,name, product，动态的填入下面的plan里
-        #如果是ubuntu环境，则把plan内容全部去掉
-        #如果是rocky环境，则不需要注释下面的环境，具体可以参考get_gallery_image.py
-        "plan": {
-           "name": "9-base",
-           "product": "rockylinux-x86_64",
-           "publisher": "resf"
-        },
-        "zones": [
-            availabiltiy_zone
-        ],
-        "hardware_profile": {
-            "vm_size": vm_size
-        },
-        "storage_profile": {
-            "image_reference": {
-                "id": "/subscriptions/" + sub_id + "/resourceGroups/" + rg_name + "/providers/Microsoft.Compute/galleries/" + sig_name + "/images/" + sig_img_name + "/versions/" + sig_img_ver_name
+    ################################
+    ###  4.创建数据盘02
+    ################################
+    start_time = time.time()
+    data_disk02 = compute_client.disks.begin_create_or_update(
+        resource_group_name = rg_name,
+        disk_name = data_disk02_name,
+        disk = {
+            "location": location,
+            "zones": [
+                availabiltiy_zone
+            ],
+            "sku": {
+                "name": data_disk02_sku
             },
-            "os_disk": {
-                "os_type": "Linux",
-                "name": os_disk_name,
-                "caching": "None",
-                "create_option": "FromImage",
-                "disk_size_gb": os_disk_size_gb,
-                "managed_disk": {
-                    "storage_account_type": os_disk_sku
-                },
-                "delete_option": "Delete",
-                "tags": custom_tags
+            "creation_data": {
+                "create_option": "Empty",
+                # 这里指定扇区大小为512 字节
+                "logical_sector_size": 512
             },
-            "data_disks": [
-                #第一块数据盘
+            "disk_size_gb": data_disk_size_gb,
+            "disk_iops_read_write": data_disk_iops,
+            "disk_m_bps_read_write": data_disk_mbps
+        }
+    ).result()
+
+    print("--- %s seconds ---" % (time.time() - start_time))
+    print("Create data disk 02:")
+
+    ################################
+    #5.创建安全组
+    ################################
+    start_time = time.time()
+    nic_nsg_result = network_client.network_security_groups.begin_create_or_update(
+        rg_name,
+        nic_nsgname,
+        {
+            'location': location,
+            'security_rules': [
                 {
-                    "lun": 0,
-                    "name": data_disk01_name,
-                    "caching": "None",  #"ReadOnly"
-                    "create_option": "Attach",                    
+                    'name': 'Allow-Internet-HTTP-Inbound',
+                    'protocol': 'Tcp',
+                    'direction': 'Inbound',
+                    'source_address_prefix': '*',
+                    'destination_address_prefix': '*',
+                    'access': 'Allow',
+                    'destination_port_range': '80',
+                    'source_port_range': '*',
+                    'priority': 3000
+                },
+                {
+                    'name': 'Allow-Internet-HTTPS-Inbound',
+                    'protocol': 'Tcp',
+                    'direction': 'Inbound',
+                    'source_address_prefix': '*',
+                    'destination_address_prefix': '*',
+                    'access': 'Allow',
+                    'destination_port_range': '443',
+                    'source_port_range': '*',
+                    'priority': 3001
+                }
+            ]
+        }
+    ).result()
+    print("--- %s seconds ---" % (time.time() - start_time))
+    print("Create NIC Network Security Group:")
+
+    ################################
+    #6.创建网卡，并附加安全组
+    ################################
+
+    start_time = time.time()
+    nic = network_client.network_interfaces.begin_create_or_update(
+        resource_group_name = rg_name,
+        network_interface_name = nic_name,
+        parameters = {
+            "location": location,
+            "ip_configurations": [{
+                "name": "nic-ip-config",
+                "subnet": {
+                    "id": "/subscriptions/" + sub_id + "/resourceGroups/" + rg_name + "/providers/Microsoft.Network/virtualNetworks/" + vnet_name + "/subnets/" + subnet_name
+                },
+                "private_ip_allocation_method": "Dynamic"
+            }],
+            "network_security_group": {
+                'id': nic_nsg_result.id
+                #/subscriptions/c4959ac6-4963-4b67-90dd-da46865b607f/resourceGroups/DEFAULTRG/providers/Microsoft.Network/networkSecurityGroups/NIO_PE_OPS
+            },
+            "enable_accelerated_networking": True,
+            "tags": custom_tags
+        }
+    ).result()
+    print("--- %s seconds ---" % (time.time() - start_time))
+    print("Created NIC:\n{}".format(nic))
+
+
+
+    ################################
+    #7.创建虚拟机
+    ################################
+    start_time = time.time()
+    vm = compute_client.virtual_machines.begin_create_or_update(
+        resource_group_name = rg_name,
+        vm_name = vm_name,
+        parameters = {
+            "location": location,
+            #从get_gallery_image里获得的publisher,name, product，动态的填入下面的plan里
+            #如果是ubuntu环境，则把plan内容全部去掉
+            #如果是rocky环境，则不需要注释下面的环境，具体可以参考get_gallery_image.py
+            "plan": {
+            "name": "9-base",
+            "product": "rockylinux-x86_64",
+            "publisher": "resf"
+            },
+            "zones": [
+                availabiltiy_zone
+            ],
+            "hardware_profile": {
+                "vm_size": vm_size
+            },
+            "storage_profile": {
+                "image_reference": {
+                    "id": "/subscriptions/" + sub_id + "/resourceGroups/" + rg_name + "/providers/Microsoft.Compute/galleries/" + sig_name + "/images/" + sig_img_name + "/versions/" + sig_img_ver_name
+                },
+                "os_disk": {
+                    "os_type": "Linux",
+                    "name": os_disk_name,
+                    "caching": "None",
+                    "create_option": "FromImage",
+                    "disk_size_gb": os_disk_size_gb,
                     "managed_disk": {
-                        "id": "/subscriptions/" + sub_id + "/resourcegroups/" + rg_name + "/providers/Microsoft.Compute/disks/" + data_disk01_name
-                   },
+                        "storage_account_type": os_disk_sku
+                    },
                     "delete_option": "Delete",
                     "tags": custom_tags
                 },
-                #第二块数据盘
-                {
-                    "lun": 1,
-                    "name": data_disk02_name,
-                    "caching": "None",  #"ReadOnly"
-                    "create_option": "Attach",                    
-                    "managed_disk": {
-                        "id": "/subscriptions/" + sub_id + "/resourcegroups/" + rg_name + "/providers/Microsoft.Compute/disks/" + data_disk02_name
-                   },
-                    "delete_option": "Delete",
-                    "tags": custom_tags
+                "data_disks": [
+                    #第一块数据盘
+                    {
+                        "lun": 0,
+                        "name": data_disk01_name,
+                        "caching": "None",  #"ReadOnly"
+                        "create_option": "Attach",                    
+                        "managed_disk": {
+                            "id": "/subscriptions/" + sub_id + "/resourcegroups/" + rg_name + "/providers/Microsoft.Compute/disks/" + data_disk01_name
+                    },
+                        "delete_option": "Delete",
+                        "tags": custom_tags
+                    },
+                    #第二块数据盘
+                    {
+                        "lun": 1,
+                        "name": data_disk02_name,
+                        "caching": "None",  #"ReadOnly"
+                        "create_option": "Attach",                    
+                        "managed_disk": {
+                            "id": "/subscriptions/" + sub_id + "/resourcegroups/" + rg_name + "/providers/Microsoft.Compute/disks/" + data_disk02_name
+                    },
+                        "delete_option": "Delete",
+                        "tags": custom_tags
+                    }
+                ]
+            },
+            "additional_capabilities": {
+                #"ultra_ssd_enabled": True
+                "ultra_ssd_enabled": False
+            },
+            "os_profile": {
+                "computer_name": computer_name,
+                "admin_username": "testuser",
+                "linux_configuration": {
+                    'disable_password_authentication': True,
+                        'ssh': SshConfiguration(
+                            public_keys=[
+                                SshPublicKey(
+                                    #下面这个path的值写死，请不要修改
+                                    path=f'/home/testuser/.ssh/authorized_keys',
+                                    #从第一步里拿到ssh public key
+                                    key_data = ssh_public_key
+                                )
+                            ]
+                        )
                 }
-            ]
-        },
-        "additional_capabilities": {
-            #"ultra_ssd_enabled": True
-            "ultra_ssd_enabled": False
-        },
-        "os_profile": {
-            "computer_name": computer_name,
-            "admin_username": "testuser",
-             "linux_configuration": {
-                'disable_password_authentication': True,
-                    'ssh': SshConfiguration(
-                        public_keys=[
-                            SshPublicKey(
-                                #下面这个path的值写死，请不要修改
-                                path=f'/home/testuser/.ssh/authorized_keys',
-                                #从第一步里拿到ssh public key
-                                key_data = ssh_public_key
-                            )
-                        ]
-                    )
-            }
-        },
-        "network_profile": {
-            "network_interfaces": [
-                {
-                    "id": "/subscriptions/" + sub_id + "/resourceGroups/" + rg_name + "/providers/Microsoft.Network/networkInterfaces/" + nic_name,
-                    "primary": True,
-                    "delete_option": "Delete"
+            },
+            "network_profile": {
+                "network_interfaces": [
+                    {
+                        "id": "/subscriptions/" + sub_id + "/resourceGroups/" + rg_name + "/providers/Microsoft.Network/networkInterfaces/" + nic_name,
+                        "primary": True,
+                        "delete_option": "Delete"
+                    }
+                ]
+            },
+            "diagnostics_profile": {
+                "boot_diagnostics": {
+                    "enabled": True
                 }
-            ]
-        },
-        "diagnostics_profile": {
-            "boot_diagnostics": {
-                "enabled": True
-            }
-        },
-        # 请注意PPG保证多台虚拟机在同一个数据中心，相距的物理位置更近，但是不是高可用方案
-        #'proximity_placement_group':{
-        #    "id": "/subscriptions/" + sub_id + "/resourceGroups/" + rg_name + "/providers/Microsoft.Compute/proximityPlacementGroups/" + ppg_name
+            },
+            # 请注意PPG保证多台虚拟机在同一个数据中心，相距的物理位置更近，但是不是高可用方案
+            #'proximity_placement_group':{
+            #    "id": "/subscriptions/" + sub_id + "/resourceGroups/" + rg_name + "/providers/Microsoft.Compute/proximityPlacementGroups/" + ppg_name
 
-        #},
-        "tags": custom_tags
-        # "virtual_machine_scale_set": {
-        #     "id": "/subscriptions/" + sub_id + "/resourceGroups/" + rg_name + "/providers/Microsoft.Compute/virtualMachineScaleSets/" + vmss_name
-        # }
-    }
-).result()
-print("--- %s seconds ---" % (time.time() - start_time))
-print("Created VM:\n{}".format(vm))
+            #},
+            "tags": custom_tags
+            # "virtual_machine_scale_set": {
+            #     "id": "/subscriptions/" + sub_id + "/resourceGroups/" + rg_name + "/providers/Microsoft.Compute/virtualMachineScaleSets/" + vmss_name
+            # }
+        }
+    ).result()
+    print("--- %s seconds ---" % (time.time() - start_time))
+    print("Created VM:\n{}".format(vm))

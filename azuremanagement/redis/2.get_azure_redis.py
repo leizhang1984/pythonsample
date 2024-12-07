@@ -3,14 +3,14 @@ from azure.identity import DefaultAzureCredential,ClientSecretCredential
 from azure.mgmt.redis import RedisManagementClient
 from azure.mgmt.network import NetworkManagementClient
 
-tenantid = os.environ.get('tenantid')
-clientid = os.environ.get('clientid')
-clientsecret = os.environ.get('clientsecret')
+tenantid = os.environ.get('nonprod_tenantid')
+clientid = os.environ.get('nonprod_clientid')
+clientsecret = os.environ.get('nonprod_clientsecret')
 
 def main():
-    rg_name = "default-rg"
-    redisname = "s-azure-test"
-    subscription_id = '074b8f7e-9eb5-4c38-b5f9-a39cf7876bdb'
+    rg_name = "sig-rg"
+    redisname = "leiredistest01"
+    subscription_id = "166157a8-9ce9-400b-91c7-1d42482b83d6"
 
     clientcredential = ClientSecretCredential(tenantid,clientid,clientsecret)
     redisclient = RedisManagementClient(credential = clientcredential, subscription_id = subscription_id)
@@ -19,22 +19,29 @@ def main():
 
     print(redis.name)
     print(redis.subnet_id)
+    #获得isMaster信息
 
-    result = redis.subnet_id.split("/")
+    instances = redis.instances
+    for instance in instances:
+        print(instance.ssl_port)
+        print(instance.is_master)
+        print(instance.is_primary)
 
-    #虚拟网络名称
-    vnetname = result[8]
-    print(vnetname)
+    # result = redis.subnet_id.split("/")
 
-    #子网名称
-    subnetname = result[10]
-    print(subnetname)
+    # #虚拟网络名称
+    # vnetname = result[8]
+    # print(vnetname)
 
-    networkclient = NetworkManagementClient(credential = clientcredential, subscription_id = subscription_id)
+    # #子网名称
+    # subnetname = result[10]
+    # print(subnetname)
 
-    #按照虚拟网络名称和子网名称 ，获得改子网信息
-    subnetinfo = networkclient.subnets.get(rg_name,vnetname,subnetname)
-    print(subnetinfo.address_prefix)
+    # networkclient = NetworkManagementClient(credential = clientcredential, subscription_id = subscription_id)
+
+    # #按照虚拟网络名称和子网名称 ，获得改子网信息
+    # subnetinfo = networkclient.subnets.get(rg_name,vnetname,subnetname)
+    # print(subnetinfo.address_prefix)
 
 if __name__ == '__main__':
     main()
