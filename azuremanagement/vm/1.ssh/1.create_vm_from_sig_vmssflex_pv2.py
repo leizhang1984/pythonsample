@@ -369,3 +369,24 @@ except ResourceNotFoundError:
     ).result()
     print("--- %s seconds ---" % (time.time() - start_time))
     print("Created VM:\n{}".format(vm))
+
+    ################################
+    #8.把这个虚拟机的内网ip打印出来
+    ################################
+       # 获取虚拟机信息
+    vm = compute_client.virtual_machines.get(rg_name, vm_name)
+    
+    # 获取虚拟机的网络接口 ID
+    nic_id = vm.network_profile.network_interfaces[0].id
+    
+    # 提取网络接口的名称和资源组名称
+    nic_name = nic_id.split('/')[-1]
+    nic_resource_group = nic_id.split('/')[4]
+    
+    # 获取网络接口信息
+    nic = network_client.network_interfaces.get(nic_resource_group, nic_name)
+    
+    # 获取内网 IP 地址
+    private_ip_address = nic.ip_configurations[0].private_ip_address
+    
+    print(f"虚拟机 '{vm_name}' 的内网 IP 地址是: {private_ip_address}")
