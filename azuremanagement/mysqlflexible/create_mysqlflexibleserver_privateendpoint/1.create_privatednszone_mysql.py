@@ -118,7 +118,7 @@ def main():
 
 
     ###########
-    #3.新建Private DNS Zone后，还要与PE EU OPS link
+    #4.新建Private DNS Zone后，还要与PE EU OPS link
 
 
     pe_network_client = NetworkManagementClient(
