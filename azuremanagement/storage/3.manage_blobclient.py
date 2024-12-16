@@ -7,6 +7,11 @@ from datetime import datetime, timedelta
 from azure.mgmt.storage import StorageManagementClient
 #pip3 install azure-storage-blob
 
+
+'''
+实现把本地文件上传到Azure Blob
+并且下载链接是通过Token授权的
+'''
 tenantid = os.environ.get('nonprod_tenantid')
 clientid = os.environ.get('nonprod_clientid')
 clientsecret = os.environ.get('nonprod_clientsecret')
