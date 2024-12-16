@@ -9,8 +9,9 @@ from azure.mgmt.storage import StorageManagementClient
 
 
 '''
-实现把本地文件上传到Azure Blob
-并且下载链接是通过Token授权的
+实现功能：
+1.把本地文件上传到Azure Blob
+2.上传成功后，获得访问链接，访问链接是通过sas token Token授权的
 '''
 tenantid = os.environ.get('nonprod_tenantid')
 clientid = os.environ.get('nonprod_clientid')
