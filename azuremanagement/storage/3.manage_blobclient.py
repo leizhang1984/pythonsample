@@ -91,8 +91,8 @@ def main():
         user_delegation_key=user_delegation_key,
         #默认的权限是Read，读操作
         permission=BlobSasPermissions(read=True),
-        #访问的开始时间是当前时间，
-        #访问的结束时间是后面1小时内
+        #访问的开始时间：当前时间，
+        #访问的结束时间：往后1小时内
         expiry=datetime.utcnow() + timedelta(hours=1)  # 设置 SAS 令牌的过期时间
     )
 
