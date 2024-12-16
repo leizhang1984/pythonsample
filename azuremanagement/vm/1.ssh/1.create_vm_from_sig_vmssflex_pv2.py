@@ -393,9 +393,9 @@ def create_vm(n):
 
 def main():
     #4个线程
-    with ThreadPoolExecutor(max_workers=4) as executor:
+    with ThreadPoolExecutor(max_workers=40) as executor:
         #创建10台虚拟机
-        futures = [executor.submit(create_vm, i) for i in range(10)]
+        futures = [executor.submit(create_vm, i) for i in range(100)]
         for future in futures:
             print(future.result())
 
