@@ -14,7 +14,7 @@ clientsecret = os.environ.get('nonprod_clientsecret')
 eventhub_namespace = "azuremonitorns.servicebus.windows.net"  #os.getenv("EVENT_HUB_NAMESPACE")
 eventhub_name = "resourcehealth" #os.getenv("EVENT_HUB_NAME")
 
-#需要提前设置consumer_group
+#需要提前创建好：consumer_group
 consumer_group = "demo"
 
 def on_event(partition_context, event):
