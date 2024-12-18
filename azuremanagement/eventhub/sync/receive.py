@@ -14,7 +14,8 @@ clientsecret = os.environ.get('nonprod_clientsecret')
 eventhub_namespace = "azuremonitorns.servicebus.windows.net"  #os.getenv("EVENT_HUB_NAMESPACE")
 eventhub_name = "resourcehealth" #os.getenv("EVENT_HUB_NAME")
 
-
+#需要提前设置consumer_group
+consumer_group = "demo"
 
 def on_event(partition_context, event):
     # Put your code here.
@@ -47,7 +48,7 @@ def on_error(partition_context, error):
 
 
 if __name__ == "__main__":
-    
+
    # 使用服务主体进行身份验证
     credential = ClientSecretCredential(tenantid, clientid, clientsecret)
 
@@ -55,7 +56,7 @@ if __name__ == "__main__":
         fully_qualified_namespace=eventhub_namespace,
         eventhub_name=eventhub_name,
         credential=credential,
-        consumer_group="demo",
+        consumer_group=consumer_group,
     )
 
     try:
