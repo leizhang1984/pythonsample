@@ -104,7 +104,7 @@ def main():
                 "maintenancewindow": {
                     "customwindow":"Enabled",
                     #默认是UTC时区，北京时间是UTC+8
-                    "dayofweek": 0,  # 0表示星期天，1表示星期一，依此类推
+                    "dayofweek": 0,   # 0表示星期天，1表示星期一，依此类推
                     "starthour": 2,   # 维护窗口的开始小时（0-23）
                     "startminute": 0  # 维护窗口的开始分钟（0-59）
                 }
