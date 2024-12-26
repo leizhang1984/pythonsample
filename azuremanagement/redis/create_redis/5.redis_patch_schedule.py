@@ -39,6 +39,7 @@ def main():
                 "scheduleEntries": [
                     #维护窗口开始时间是UTC时区，请注意北京时间是UTC+8时区
                     #更新创建至少需要5小时
+                    #请修改下面的dayOfWeek，和startHourUtc
                     {"dayOfWeek": "Monday", "maintenanceWindow": "PT5H", "startHourUtc": 12},
                     {"dayOfWeek": "Tuesday","maintenanceWindow": "PT5H", "startHourUtc": 12},
                     {"dayOfWeek": "Wednesday","maintenanceWindow": "PT5H", "startHourUtc": 12}
