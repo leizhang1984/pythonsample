@@ -4,7 +4,6 @@ from azure.identity import DefaultAzureCredential,ClientSecretCredential
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.privatedns import PrivateDnsManagementClient
 from azure.mgmt.rdbms.mysql_flexibleservers import MySQLManagementClient
-
 '''
 https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/rdbms/azure-mgmt-rdbms/generated_samples/mysql/server_create.py
 
@@ -25,7 +24,7 @@ def main():
     #DD的订阅ID
     dd_subscription_id = "074b8f7e-9eb5-4c38-b5f9-a39cf7876bdb"
 
-   # Create client
+    #Create client
     clientcredential = ClientSecretCredential(tenantid,clientid,clientsecret)
 
     pe_network_client = NetworkManagementClient(
@@ -101,6 +100,13 @@ def main():
                     # "delegated_subnet_resource_id":subnet_id,
                     #关联的private dns zone id
                     "private_dns_zone_resource_id": private_dnszone_id
+                },
+                "maintenancewindow": {
+                    "customwindow":"Enabled",
+                    #默认是UTC时区，北京时间是UTC+8
+                    "dayofweek": 0,  # 0表示星期天，1表示星期一，依此类推
+                    "starthour": 2,   # 维护窗口的开始小时（0-23）
+                    "startminute": 0  # 维护窗口的开始分钟（0-59）
                 }
             },
             "sku": {"name": "Standard_D2ds_v4", "tier": "GeneralPurpose"},

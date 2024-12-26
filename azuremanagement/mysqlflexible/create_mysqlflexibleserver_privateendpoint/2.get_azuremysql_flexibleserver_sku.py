@@ -33,5 +33,10 @@ def main():
     for result in results:
         print(result)
 
+    #Get
+    # results = mysqlflexiblesvr_client.servers.get("sig-rg","leizhangproduction-00")
+    # for result in results:
+    #     print(result)
+
 if __name__ == "__main__":
     main()
