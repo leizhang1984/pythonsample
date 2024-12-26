@@ -19,7 +19,7 @@ def main():
     # PE的资源组名称
     pe_rg_name = "sig-rg"
     # 要创建的Redis名称
-    pe_redisname = "leiredisstd01"
+    pe_redisname = "leiredisstd00"
     # PE的订阅ID
     pe_subscription_id = '166157a8-9ce9-400b-91c7-1d42482b83d6'
 
