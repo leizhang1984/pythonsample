@@ -17,11 +17,11 @@ def main():
     clientsecret = os.environ.get('nonprod_clientsecret')
 
     # PE的资源组名称
-    pe_rg_name = "sig-rg"
+    pe_rg_name = "defaultrg"
     # 要创建的Redis名称
     pe_redisname = "leiredisstd01"
     # PE的订阅ID
-    pe_subscription_id = '166157a8-9ce9-400b-91c7-1d42482b83d6'
+    pe_subscription_id = 'c4959ac6-4963-4b67-90dd-da46865b607f'
 
     #设置数据中心区域
     location = "germanywestcentral"
