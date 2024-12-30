@@ -53,7 +53,7 @@ def main():
     private_dnszone_id = privatre_dnszone.id
 
     #MySQl Flexible Server服务器名称，随意输入
-    mysqlflexible_servername = "leizhangproduction-00"
+    mysqlflexible_servername = "leizhangproduction00"
 
     #自定义标签
     custom_tags = {
@@ -90,7 +90,8 @@ def main():
                     "autoGrow": "Enabled",
                     "iops": "600",
                     "storageRedundancy": "LocalRedundancy",
-                    "storageSizeGB": 100,
+                    #最小容量20GB
+                    "storageSizeGB": 20,
                 },
                 "version": "8.0.21",
                 "network":{
