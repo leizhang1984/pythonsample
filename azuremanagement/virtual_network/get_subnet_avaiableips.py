@@ -37,6 +37,11 @@ def main():
         print("Subnet Name is:{}".format(subnet_name))
         print("Subnet Address Prefix is:{}".format(subnet.address_prefix))
 
+        print("子网id:{}".format(usage.id))
+        print("subnet Total IP:{}".format(usage.limit))
+        print("subnet Used IP:{}".format(usage.current_value))
+        print("subnet Available IP:{}".format(usage.limit-usage.current_value))
+
 
         
 
