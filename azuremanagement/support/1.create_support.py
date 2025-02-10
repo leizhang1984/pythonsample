@@ -25,7 +25,9 @@ def main():
     title = "Azure VM Issue"
     #描述
     description = "This is a sample support ticket created via Python SDK."
+
      #严重性级别，CRITICAL，HIGHESTCRITICALIMPACT，MINIMAL，MODERATE
+     #注意如果是中文支持的话，python code创建的时候严重性只能是最低minimal
     severity = "minimal" #minimal
     #是否需要24*7
     require24_x7_response = "false"
@@ -50,8 +52,8 @@ def main():
         problem_classification_id = "/providers/Microsoft.Support/services/cddd3eb5-1830-b494-44fd-782f691479dc/problemClassifications/46d3b5cb-4fa8-12e0-c525-9c41d42dcb8b",
         #'problem_classification_display_name': 'VM Performance / Disk throughput or IOPS are lower than expected'
 
-        #调试时候使用Yes
-        is_temporary_ticket = "Yes",
+        #is_temporary_ticket = "Yes",
+
         contact_details = ContactProfile(
             first_name ="Lei",
             last_name = "Zhang",
@@ -66,6 +68,7 @@ def main():
             preferred_support_language = "zh-hans"
         )
     )
+    
     #注意Ticket Name名字要唯一
     ticket_name = "sample_support_ticket_07"
 
