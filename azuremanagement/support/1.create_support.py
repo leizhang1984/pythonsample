@@ -28,9 +28,9 @@ def main():
 
      #严重性级别，CRITICAL，HIGHESTCRITICALIMPACT，MINIMAL，MODERATE
      #注意如果是中文支持的话，python code创建的时候严重性只能是最低minimal
-    severity = "minimal" #minimal
+    severity = "moderate" #minimal
     #是否需要24*7
-    require24_x7_response = "false"
+    require24_x7_response = False
     #高级诊断设置
     advanced_diagnostic_consent="Yes"
     
@@ -68,35 +68,18 @@ def main():
             preferred_support_language = "zh-hans"
         )
     )
-    
+
     #注意Ticket Name名字要唯一
-    ticket_name = "sample_support_ticket_07"
+    ticket_name = "sample_support_ticket_0"
 
     #创建支持工单,
-    #目前测试下来默认创建的中文支持工单，严重级别只能是minimal
     support_ticket = support_client.support_tickets.begin_create(
         support_ticket_name = ticket_name,
-        create_support_ticket_parameters = support_ticket_details)
+        create_support_ticket_parameters = support_ticket_details).result()
 
 
-    # 设置调用次数和时间间隔
-    max_attempts = 10
-    interval = 5  # 秒
+    print(f"Created support ticket: {support_ticket.support_ticket_id}")
 
-    for attempt in range(max_attempts):
-        try:
-            #创建工单完毕后，把工单级别调高到Moderate
-            support_ticket = support_client.support_tickets.get(ticket_name)
-            update_support_ticket = UpdateSupportTicket(severity = "moderate")
-            support_client.support_tickets.update(ticket_name,update_support_ticket)
-            break
-        except Exception as e:
-            continue
-        finally:
-            if attempt < max_attempts - 1:
-                time.sleep(interval)
-
-    print("工单创建完毕")
 
 if __name__ == "__main__":
     main()
