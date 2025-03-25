@@ -35,7 +35,7 @@ def main():
 
     #internal PT1H 代表每1小时,目前只支持1小时抽样间隔
     #internal PT1M 代表每1分钟
-
+    #返回的结果是B，需要自己换算成MB
     metric_result = monitor_client.metrics.list(resource_id,timespan,"PT1H","UsedCapacity","average",None,None,None)
   
 
@@ -48,6 +48,7 @@ if __name__ == '__main__':
 
 
     '''
+    下面是返回的Sample：
     {
   "cost": 1480,
   "timespan": "2025-03-24T07:00:00Z/2025-03-25T07:41:00Z",
