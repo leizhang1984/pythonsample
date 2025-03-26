@@ -27,33 +27,28 @@ def main():
 
      # Create client
     clientcredential = ClientSecretCredential(tenantid,clientid,clientsecret)
-
     resource_client = ResourceManagementClient(clientcredential, subscription_id)
-
     storage_client = StorageManagementClient(clientcredential, subscription_id)
     try:
       # Get storage account
       storage_accounts = storage_client.storage_accounts.list()
-      storage_account_ids = [account.name for account in storage_accounts]
-      storage_account_name = storage_account_ids[0]
+      for storage_account in storage_accounts:
+        print(storage_account.name)
+        
+        
+        blob_service_client = BlobServiceClient(f"https://{storage_account.name}.blob.core.windows.net", credential = clientcredential)
 
-      # storage_account_name = storage_client.storage_accounts.get_properties(resourcegroup_name,storage_account_name)
-
-      # account_url = "https://" + storage_account_name + ".blob.core.windows.net"
-
-      blob_service_client = BlobServiceClient(f"https://{storage_account_name}.blob.core.windows.net", credential = clientcredential)
-
-      containers = blob_service_client.list_containers()
-      #遍历所有容器
-      for container in containers:
-         #显示container name
-         print(container.name)
-         container_client = blob_service_client.get_container_client(container.name)
-         #遍历所有Blob
-         blobs = container_client.list_blobs()
-         for blob in blobs:
-            #显示文件名
-            print(blob.name)
+        containers = blob_service_client.list_containers()
+        #遍历所有容器
+        for container in containers:
+          #显示container name
+          print(container.name)
+          container_client = blob_service_client.get_container_client(container.name)
+          #遍历所有Blob
+          blobs = container_client.list_blobs()
+          for blob in blobs:
+              #显示文件名
+              print(blob.name)
 
     except ResourceNotFoundError:
       #没找到该资源
