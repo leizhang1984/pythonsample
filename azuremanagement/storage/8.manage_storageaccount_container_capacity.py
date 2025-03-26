@@ -19,26 +19,29 @@ def main():
     #订阅名称
     subscription_id = "166157a8-9ce9-400b-91c7-1d42482b83d6"
     #资源组名称
-    resourcegroup_name = "test-rg"
+    #resourcegroup_name = "test-rg"
     #存储账户名称
-    storage_account_name = "leiteststorage000"
+    #storage_account_name = "leiteststorage000"
     #Azure存储账户所在数据中心区域，germanywestcentral就是Azure德国法兰克福
     location = "germanywestcentral"
 
      # Create client
     clientcredential = ClientSecretCredential(tenantid,clientid,clientsecret)
 
-    # # For other authentication approaches, please see: https://pypi.org/project/azure-identity/
     resource_client = ResourceManagementClient(clientcredential, subscription_id)
 
     storage_client = StorageManagementClient(clientcredential, subscription_id)
     try:
       # Get storage account
-      storage_account = storage_client.storage_accounts.get_properties(resourcegroup_name,storage_account_name)
+      storage_accounts = storage_client.storage_accounts.list()
+      storage_account_ids = [account.name for account in storage_accounts]
+      storage_account_name = storage_account_ids[0]
 
-      account_url = "https://" + storage_account_name + ".blob.core.windows.net"
+      # storage_account_name = storage_client.storage_accounts.get_properties(resourcegroup_name,storage_account_name)
 
-      blob_service_client = BlobServiceClient(account_url, credential = clientcredential)
+      # account_url = "https://" + storage_account_name + ".blob.core.windows.net"
+
+      blob_service_client = BlobServiceClient(f"https://{storage_account_name}.blob.core.windows.net", credential = clientcredential)
 
       containers = blob_service_client.list_containers()
       #遍历所有容器
@@ -58,7 +61,6 @@ def main():
       print("Can not find this storage Account")
 
     
-    #Update storage account
     
 
 
