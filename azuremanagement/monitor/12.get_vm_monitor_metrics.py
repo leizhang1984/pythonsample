@@ -33,9 +33,11 @@ def main():
 
     #internal PT1H 代表每1小时,目前只支持1小时抽样间隔
     #internal PT1M 代表每1分钟
-    #Percentage CPU	代表CPU利用率
-    #Network In Total 代表入向流量
-    #Network Out Total 代表出向流量
+
+    #Percentage CPU	                代表CPU利用率
+    #Available Memory Percentage    代表可用内存百分比
+    #Network In Total               代表入向流量
+    #Network Out Total              代表出向流量
     metric_name = "Percentage CPU,Available Memory Percentage,Network In Total,Network Out Total"
     aggregation = "average,total"
 
