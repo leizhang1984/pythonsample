@@ -41,7 +41,7 @@ def main():
                 #默认是UTC时区，转换一下时区
                 ticket_created_date_chinatime = ticket.created_date.astimezone(target_timezone)
 
-                #工单的：标题，描述，紧急程度，状态
+                #工单的：ID，创建时间，标题，紧急程度，状态(Open, closed, Updating)
                 print(f"Ticket id: {ticket.support_ticket_id}, create time: {ticket_created_date_chinatime.strftime("%Y-%m-%d %H:%M:%S")}, title: {ticket.title}, severity: {ticket.severity}, status: {ticket.status}")
                 #print(f"Ticket id: {ticket.support_ticket_id}, title: {ticket.title}, description: {ticket.description}, severity: {ticket.severity}, status: {ticket.status}")
 
