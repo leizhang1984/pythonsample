@@ -102,7 +102,7 @@ if __name__ == "__main__":
     # print("测试方案二：原始 socket 实现")
     # raw_socket_keepalive(target_url, port=443)
 
-    thread_count = 10  # 线程数量
+    thread_count = 30  # 线程数量
     requests_count = 600  # 每个线程的请求数量
 
     print("\n" + "=" * 50)

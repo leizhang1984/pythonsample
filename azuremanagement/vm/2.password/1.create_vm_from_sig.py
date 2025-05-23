@@ -146,10 +146,7 @@ vm = compute_client.virtual_machines.begin_create_or_update(
                     "storage_account_type": os_disk_sku
                 },
                 "delete_option": "Delete",
-                'tags': {
-                    "creator": "Lei Zhang",
-                    "organization": "MSFT"
-                }
+                "tags": custom_tags
             },
             "data_disks": [
                 {
@@ -170,10 +167,7 @@ vm = compute_client.virtual_machines.begin_create_or_update(
                         "storage_account_type": data_disk_sku
                    },
                     "delete_option": "Delete",
-                    'tags': {
-                        "creator": "Lei Zhang",
-                        "organization": "MSFT"
-                    }
+                    "tags": custom_tags
                 }
             ]
         },
@@ -205,10 +199,7 @@ vm = compute_client.virtual_machines.begin_create_or_update(
         #    "id": "/subscriptions/" + sub_id + "/resourceGroups/" + rg_name + "/providers/Microsoft.Compute/proximityPlacementGroups/" + ppg_name
 
         #},
-        'tags': {
-            "creator": "Lei Zhang",
-            "organization": "MSFT"
-        }#,
+        "tags": custom_tags#,
         # "virtual_machine_scale_set": {
         #     "id": "/subscriptions/" + sub_id + "/resourceGroups/" + rg_name + "/providers/Microsoft.Compute/virtualMachineScaleSets/" + vmss_name
         # }
