@@ -19,6 +19,7 @@ rg_name = "sig-rg"
 vnet_name = "NIO-EU"
 subnet_name = "PROD-EU-AZURE-TOD-FE-VM-01"
 nic_name = "NIO-EU-Rocky9-01-nic"
+public_ip_name = "NIO-EU-Rocky9-01-public-ip"
 #创建的虚拟机名称
 vm_name = "NIO-EU-Rocky9-01"
 #计算机名称
@@ -29,6 +30,13 @@ vm_size = "Standard_D2s_v5" #dlsv5, esv5
 #dlsv5 1:2
 #esv5 1:8
 
+#虚拟机可用区，只能设置1 或者2，或者3
+availabiltiy_zone = "1"
+#自定义标签
+custom_tags = {
+    'Environment': 'Development',
+    'Department': 'IT'
+}
 #os_disk_sku = "Premium_LRS"
 #操作系统盘只能是Premium_LRS和Standard_LRS
 os_disk_sku = "Premium_LRS"
@@ -47,7 +55,7 @@ sig_img_name = "centos7.9"
 sig_img_ver_name = "0.0.1"
 
 #proximityPlacementGroups，请注意PPG保证多台虚拟机在同一个数据中心，相距的物理位置更近，但是不是高可用方案
-ppg_name="lei-ppg"
+#ppg_name="lei-ppg"
 
 # Create client
 clientcredential = ClientSecretCredential(tenantid,clientid,clientsecret)
@@ -63,7 +71,23 @@ compute_client = ComputeManagementClient(
     subscription_id = sub_id
 )
 
+###先创建1个公网ip地址
 start_time = time.time()
+public_ip_parameters = {
+    "location": location,
+    "sku": {"name": "Standard"},
+    "public_ip_allocation_method": "Static",
+    "public_ip_address_version": "IPV4",
+    "tags": custom_tags
+}
+
+public_ip = network_client.public_ip_addresses.begin_create_or_update(
+    rg_name,
+    public_ip_name,
+    public_ip_parameters
+).result()
+
+###再创建1个网卡
 nic = network_client.network_interfaces.begin_create_or_update(
     resource_group_name = rg_name,
     network_interface_name = nic_name,
@@ -73,13 +97,15 @@ nic = network_client.network_interfaces.begin_create_or_update(
             "name": "nic-ip-config",
             "subnet": {
                 "id": "/subscriptions/" + sub_id + "/resourceGroups/" + rg_name + "/providers/Microsoft.Network/virtualNetworks/" + vnet_name + "/subnets/" + subnet_name
-            }
+            },
+        "public_ip_address": {
+            "id": public_ip.id,
+            "delete_option": "Delete",
+        }
         }],
         "enable_accelerated_networking": True,
-        'tags': {
-            "creator": "Lei Zhang",
-            "organization": "MSFT"
-        }
+
+        "tags": custom_tags
     }
 ).result()
 print("--- %s seconds ---" % (time.time() - start_time))
@@ -101,7 +127,7 @@ vm = compute_client.virtual_machines.begin_create_or_update(
         #},
   
         "zones": [
-            "1"
+            availabiltiy_zone
         ],
         "hardware_profile": {
             "vm_size": vm_size

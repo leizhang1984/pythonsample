@@ -20,13 +20,13 @@ def create_vm(n):
     # clientsecret = #os.environ.get('nonprod_clientsecret')
 
     #Azure数据中心
-    location = "germanywestcentral"
+    location = "westus3"
     #订阅ID
-    sub_id = "bba32ad2-4ac4-4bc3-8c34-ad8b2475d857"
+    sub_id = "166157a8-9ce9-400b-91c7-1d42482b83d6"
     #资源组
-    rg_name = "jtvmss05-rg"
+    rg_name = "defaultrg"
     #virtual network name
-    vnet_name = "jtvmss05-vnet"
+    vnet_name = "westus3-vnet"
     #子网
     subnet_name = "vm-subnet"
 
@@ -43,7 +43,7 @@ def create_vm(n):
     vm_size = "Standard_D2s_v5" #dlsv5, esv5
 
     #虚拟机可用区，只能设置1 或者2，或者3
-    availabiltiy_zone = "1"
+    availabiltiy_zone = "2"
     #自定义标签
     custom_tags = {
         'Environment': 'Development',
