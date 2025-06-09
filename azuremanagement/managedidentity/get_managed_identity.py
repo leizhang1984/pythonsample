@@ -37,7 +37,7 @@ def query_mi_objectid(mi_objectid):
         | where ["type"] == 'microsoft.managedidentity/userassignedidentities'
         | extend principalid= properties.principalId
         | where principalid == '{mi_objectid}'
-        | project subscriptionId,resourceGroup, mi_name=name, location, principalid ''',
+        | project subscriptionId,resourceGroup, mi_id=id,mi_name=name, location, principalid ''',
         subscriptions=subscription_ids
     )
     query_response = resourcegraph_client.resources(query_mi)
@@ -46,6 +46,7 @@ def query_mi_objectid(mi_objectid):
     # 查询Managed Identity的结果
     # 包含 subscriptionId
     # resourceGroup
+    # mi_id
     # mi_name
     # location
     # principalid
@@ -56,7 +57,9 @@ def query_mi_objectid(mi_objectid):
                 print(f"  {key}: {value}")
     else:
         print("No results found.")
-
+    
+    #获得Managed Identity的ID
+    mi_id=query_response.data[0]["mi_id"]
 
     # 查询2
     # 查询与上面的Managed Identity相关联的资源
@@ -65,6 +68,7 @@ def query_mi_objectid(mi_objectid):
       | extend userAssignedIdentities= identity.userAssignedIdentities
       | where isnotempty(userAssignedIdentities)
       | where userAssignedIdentities contains '{mi_objectid}'
+      or userAssignedIdentities contains '{mi_id}'
       | project subscriptionId,resourceGroup, resource_name=name, location, id''',
         subscriptions=subscription_ids
     )
