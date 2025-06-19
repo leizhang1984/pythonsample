@@ -2,6 +2,18 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 import threading
+import logging
+from datetime import datetime
+
+# 生成带有时间戳的日志文件名
+log_filename = datetime.now().strftime('socket_http_keepalive_%Y%m%d-%H%M%S.log')
+
+# 配置日志记录
+logging.basicConfig(
+    filename=log_filename,
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 # ==============================
 # 方案一：使用 requests.Session (自动Keep-Alive)
@@ -58,7 +70,7 @@ def raw_socket_keepalive(url, port=80, requests_count=300):
     try:
         # 建立连接
         sock.connect((host, port))
-        print(f"已连接到 {host}:{port}")
+        logging.info(f"已连接到 {host}:{port} (使用 HTTPS)")
 
         for i in range(requests_count):
             # 构建 HTTP 请求
@@ -72,7 +84,7 @@ def raw_socket_keepalive(url, port=80, requests_count=300):
 
             # 发送请求
             sock.sendall(request)
-            print(f"已发送请求 [{i + 1}]")
+            logging.info(f"已发送请求 [{i + 1}]")
 
             # 接收响应
             response = b''
@@ -89,17 +101,18 @@ def raw_socket_keepalive(url, port=80, requests_count=300):
             headers = response.split(b"\r\n\r\n")[0].decode()
             content = response.split(b"\r\n\r\n")[1].decode()
 
-            print(f"响应 [{i + 1}] 头信息:\n{headers}\n")
-            print(f"响应 [{i + 1}] 头信息:\n{content}\n")
+            logging.info(f"响应 [{i + 1}] 头信息:\n{headers}\n")
+            logging.info(f"响应 [{i + 1}] 内容:\n{content}\n")
 
             # 模拟间隔
             time.sleep(1)
 
     except socket.error as e:
+        logging.error(f"Socket错误: {str(e)}")
         print(f"Socket错误: {str(e)}")
     finally:
         sock.close()
-        print("连接已关闭")
+        logging.info("连接已关闭")
 
 # 多线程执行
 def run_threads(target_url, port, thread_count, requests_count):
@@ -117,7 +130,7 @@ def run_threads(target_url, port, thread_count, requests_count):
 # 测试执行
 # ==============================
 if __name__ == "__main__":
-    target_url = "http://20.6.156.251"
+    target_url = "http://pa-nlb-876b517a8941d030.elb.ap-east-1.amazonaws.com/"
 
     # print("=" * 50)
     # print("测试方案一：requests.Session")
@@ -127,7 +140,7 @@ if __name__ == "__main__":
     #print("测试方案二：原始 socket 实现")
     #raw_socket_keepalive(target_url, port=80)
 
-    thread_count = 20  # 线程数量
+    thread_count = 100  # 线程数量
     requests_count = 300  # 每个线程的请求数量
 
     print("\n" + "=" * 50)
