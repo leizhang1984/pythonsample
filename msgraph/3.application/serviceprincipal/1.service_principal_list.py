@@ -5,11 +5,15 @@ from azure.identity import ClientSecretCredential
 from msgraph import GraphServiceClient
 from msgraph.generated.applications.applications_request_builder import ApplicationsRequestBuilder
 
+#列出所有的Service Principal
+#需要的权限，请参考：
+#https://learn.microsoft.com/en-us/graph/api/serviceprincipal-list?view=graph-rest-1.0&tabs=http#code-try-1
+#Application.Read.All
 
 def main():
-    tenantid = os.environ.get('tenantid')
-    clientid = os.environ.get('clientid')
-    clientsecret = os.environ.get('clientsecret')
+    tenantid = os.environ.get('msdn_tenantid')
+    clientid = os.environ.get('msdn_clientid')
+    clientsecret = os.environ.get('msdn_clientsecret')
 
     # 1.先获得Access Token
     token_endpoint = f'https://login.microsoftonline.com/{tenantid}/oauth2/v2.0/token'
@@ -29,22 +33,25 @@ def main():
     print(access_token)
 
     #service Principal List All
-    url = f"https://graph.microsoft.com/v1.0/servicePrincipals"
-    headers = {'Authorization': f'Bearer {access_token}'}
+    #url = f"https://graph.microsoft.com/v1.0/servicePrincipals"
+    url = f"https://graph.microsoft.com/v1.0/servicePrincipals?$select=accountEnabled,id,appId,displayName,publisherName,servicePrincipalType"
+
+    headers = {'Authorization': f'Bearer {access_token}',
+               'ConsistencyLevel': 'eventual'}
 
     response = requests.get(url, headers = headers)
     response_data = response.json()
     print(response_data)
-    print("OK")
+    
 
 
     #Service Principal Get By Object Id
-    objectid = "e1a0571c-4c3c-4014-a009-d2287dd24e67"
-    url = f"https://graph.microsoft.com/v1.0/servicePrincipals/{objectid}" 
+    # objectid = "e1a0571c-4c3c-4014-a009-d2287dd24e67"
+    # url = f"https://graph.microsoft.com/v1.0/servicePrincipals/{objectid}" 
 
-    response = requests.get(url, headers = headers)
-    response_data = response.json()
-    print(response_data)
+    # response = requests.get(url, headers = headers)
+    # response_data = response.json()
+    # print(response_data)
 
 if __name__ == "__main__":
     main()
