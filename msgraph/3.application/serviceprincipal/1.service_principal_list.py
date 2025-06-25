@@ -32,9 +32,12 @@ def main():
     access_token = response.json()['access_token']
     print(access_token)
 
+    # 设置需要查找的App Id
+    search_appid = "4477ca3d-4dd8-4de9-8f0d-d1e0a8f9d4f7"
     #service Principal List All
     #url = f"https://graph.microsoft.com/v1.0/servicePrincipals"
-    url = f"https://graph.microsoft.com/v1.0/servicePrincipals?$select=accountEnabled,id,appId,displayName,publisherName,servicePrincipalType"
+    #url = f"https://graph.microsoft.com/v1.0/servicePrincipals?$?select=accountEnabled,id,appId,displayName,publisherName,servicePrincipalType"
+    url = f"https://graph.microsoft.com/v1.0/servicePrincipals?$filter=displayName eq '20240726User'"
 
     headers = {'Authorization': f'Bearer {access_token}',
                'ConsistencyLevel': 'eventual'}
