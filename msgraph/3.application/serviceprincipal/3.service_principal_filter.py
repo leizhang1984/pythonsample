@@ -30,10 +30,12 @@ def main():
 
     # 获得Access Token, Access Token的有效期为3600秒
     access_token = response.json()['access_token']
-    # print(access_token)
-    
-    #service Principal List All
-    url = f"https://graph.microsoft.com/v1.0/servicePrincipals"
+    print(access_token)
+
+
+    #url = f"https://graph.microsoft.com/v1.0/servicePrincipals"
+    #url = f"https://graph.microsoft.com/v1.0/servicePrincipals?$?select=accountEnabled,id,appId,displayName,publisherName,servicePrincipalType"
+    url = f"https://graph.microsoft.com/v1.0/servicePrincipals?$filter=displayName eq '20240726User'"
 
     headers = {'Authorization': f'Bearer {access_token}',
                'ConsistencyLevel': 'eventual'}
@@ -42,5 +44,14 @@ def main():
     response_data = response.json()
     print(response_data)
     
+
+    #Service Principal Get By Object Id
+    # objectid = "e1a0571c-4c3c-4014-a009-d2287dd24e67"
+    # url = f"https://graph.microsoft.com/v1.0/servicePrincipals/{objectid}" 
+
+    # response = requests.get(url, headers = headers)
+    # response_data = response.json()
+    # print(response_data)
+
 if __name__ == "__main__":
     main()
