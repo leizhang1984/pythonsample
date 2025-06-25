@@ -24,10 +24,22 @@ async def main():
     参考: https://learn.microsoft.com/en-us/graph/api/application-list?view=graph-rest-1.0&tabs=http
     检查Permissions
     '''
-    # List All Application
-    apps = await graph_service_client.applications.get()
-    print(apps)
+   
+    # Filter
+    query_params = ApplicationsRequestBuilder.ApplicationsRequestBuilderGetQueryParameters(
+		filter = "startswith(displayName, '20240726User')",
+		count = True,
+        #top = 10,
+		orderby = ["displayName"],
+        )
 
+    request_configuration = ApplicationsRequestBuilder.ApplicationsRequestBuilderGetRequestConfiguration(
+    query_parameters = query_params,
+    )
+    request_configuration.headers.add("ConsistencyLevel", "eventual")
+
+    app = await graph_service_client.applications.get(request_configuration = request_configuration)
+    print(app)
 
 if __name__ == "__main__":
     asyncio.run(main())
