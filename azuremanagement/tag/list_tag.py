@@ -1,7 +1,7 @@
 import os
 from azure.identity import ClientSecretCredential
 from azure.mgmt.resource import SubscriptionClient, ResourceManagementClient
-from msrestazure.azure_configuration import AzureConfiguration
+
 
 def main():
     # 替换为你的服务主体信息
