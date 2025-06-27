@@ -27,7 +27,7 @@ def main():
         print(f"Subscription Name: {subscription.display_name}")
         
         # 指定你需要的 API 版本
-        api_version = '2021-04-01'  # 指定你需要的 API 版本
+        api_version = '2021-04-01'
 
         # 创建资源管理客户端
         resource_client = ResourceManagementClient(clientcredential, subscription_id, api_version)
