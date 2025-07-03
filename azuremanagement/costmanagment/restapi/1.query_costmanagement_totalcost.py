@@ -26,8 +26,8 @@ def main():
     response = requests.get(subscriptions_url, headers=headers)
     subscriptions = response.json().get('value', [])
 
-    # 初始化结果字典
-    cost_by_subscription = {}
+    # 初始化结果列表
+    cost_by_subscription = []
 
     # 获取用户指定的年月
     year = int(2025)
@@ -79,7 +79,11 @@ def main():
         if response.status_code == 200:
             data = response.json()
             total_cost = data['properties']['rows'][0][0] if data['properties']['rows'] else 0
-            cost_by_subscription[subscription_name] = total_cost
+            cost_by_subscription.append({
+                'subscriptionName': subscription_name,
+                'subscriptionId': subscription_id,
+                'totalCost': total_cost
+            })
         else:
             print(f"Failed to retrieve cost data for subscription: {subscription_name}")
             print("Status Code:", response.status_code)
@@ -87,12 +91,17 @@ def main():
 
     # 输出结果
     print(json.dumps(cost_by_subscription, indent=4))
+
 if __name__ == "__main__":
     main()
 
 '''
 返回结果
-{
-    "leizhang-non-prod": 3371.97767768772
-}
+[
+    {
+        "subscriptionName": "leizhang-non-prod",
+        "subscriptionId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        "totalCost": 3371.97767768772
+    }
+]
 '''
