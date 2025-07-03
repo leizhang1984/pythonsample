@@ -88,3 +88,10 @@ def main():
     print(json.dumps(cost_by_subscription, indent=4))
 if __name__ == "__main__":
     main()
+
+'''
+返回结果
+{
+    "leizhang-non-prod": 3371.97767768772
+}
+'''
