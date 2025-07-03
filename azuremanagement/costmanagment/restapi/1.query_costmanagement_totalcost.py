@@ -6,6 +6,7 @@ from azure.identity import ClientSecretCredential
 
 def main():
     # 替换为你的 Azure AD 租户 ID、客户端 ID 和客户端密钥
+    # 需要增加权限：Cost Management Reader
     tenant_id = os.environ.get('nonprod_tenantid')
     client_id = os.environ.get('nonprod_clientid')
     client_secret = os.environ.get('nonprod_clientsecret')
