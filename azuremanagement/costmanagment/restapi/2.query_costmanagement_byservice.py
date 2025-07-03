@@ -3,6 +3,7 @@ import json
 import os
 from datetime import datetime, timedelta
 from azure.identity import ClientSecretCredential
+from dateutil.relativedelta import relativedelta
 
 def main():
     # 替换为你的 Azure AD 租户 ID、客户端 ID 和客户端密钥
@@ -35,11 +36,12 @@ def main():
 
     # 获取用户指定月份的开始和结束日期
     first_day_of_specified_month = datetime(year, month, 1)
-    if month == 12:
-        first_day_of_next_month = datetime(year + 1, 1, 1)
-    else:
-        first_day_of_next_month = datetime(year, month + 1, 1)
+    first_day_of_next_month = first_day_of_specified_month + relativedelta(months=1)
     last_day_of_specified_month = first_day_of_next_month - timedelta(days=1)
+
+    # 格式化日期为 ISO 8601 格式
+    start_date = first_day_of_specified_month.strftime('%Y-%m-%dT%H:%M:%SZ')
+    end_date = last_day_of_specified_month.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     # 格式化日期为 ISO 8601 格式
     start_date = first_day_of_specified_month.strftime('%Y-%m-%dT%H:%M:%SZ')
