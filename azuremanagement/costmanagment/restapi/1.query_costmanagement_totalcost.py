@@ -40,8 +40,8 @@ def main():
     last_day_of_specified_month = first_day_of_next_month - timedelta(days=1)
 
     # 格式化日期为 ISO 8601 格式
-    start_date = first_day_of_specified_month.strftime('%Y-%m-%dT%H:%M:%SZ')
-    end_date = last_day_of_specified_month.strftime('%Y-%m-%dT%H:%M:%SZ')
+    start_date = first_day_of_specified_month.strftime('%Y-%m-%dT00:00:00Z')
+    end_date = last_day_of_specified_month.strftime('%Y-%m-%dT23:59:59Z')
 
     # 遍历所有订阅，获取费用详情
     for subscription in subscriptions:
