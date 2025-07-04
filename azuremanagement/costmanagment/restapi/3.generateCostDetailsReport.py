@@ -73,8 +73,14 @@ def main():
                 if poll_response.status_code == 200:
                     # 报告生成完成，获取报告下载链接
                     report_data = poll_response.json()
-                    print(f"Subscription: {subscription_name} ({subscription_id})")
-                    print("Report Data:", json.dumps(report_data, indent=4))
+                    blob_link = report_data['manifest']['blobs'][0]['blobLink']
+
+                    print(f"Subscription Name: {subscription_name}")
+                    print(f"Subscription ID: {subscription_id}")
+                    print(f"Blob Link: {blob_link}")
+                    # 后续需要把blob_link下载到本地，然后打开link里的文件进行处理
+                    # 步骤略
+
                     break
                 elif poll_response.status_code == 202:
                     # 继续轮询
@@ -91,39 +97,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-'''
-Subscription: leizhang-non-prod (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-Report Data: {
-    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/providers/Microsoft.CostManagement/costDetailsOperationResults/ce291fd9-c45f-4d36-9058-8ec07fecbf36", 
-    "name": "ce291fd9-c45f-4d36-9058-8ec07fecbf36",
-    "status": "Completed",
-    "manifest": {
-        "manifestVersion": "2022-05-01",
-        "dataFormat": "Csv",
-        "byteCount": 10381137,
-        "blobCount": 1,
-        "compressData": false,
-        "requestContext": {
-            "requestScope": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/",
-            "requestBody": {
-                "metric": "ActualCost",
-                "timePeriod": {
-                    "start": "2025-06-01T00:00:00Z",
-                    "end": "2025-06-30T23:59:59Z"
-                },
-                "invoiceId": null,
-                "billingPeriod": null
-            }
-        },
-        "blobs": [
-            {
-                "blobLink": "https://xxxxxxxx.blob.core.windows.net/xxxxxxxx/xxxxxxxx?skoid=xxxx&xxxx=xxxx&xxxx=xxxx&xxxx=xxxx&xxxx=xxxx&xxxx=xxxx&xxxx=xxxx&xxxx=xxxx&xxxx=xxxx&xxxx=xxxx&xxxx=xxxx&xxxx=xxxx&xxxx=xxxx&xxxx=xxxx",
-                "byteCount": 10381137
-            }
-        ]
-    },
-    "validTill": "2025-07-04T16:21:35.4475497Z"
-}
-
-'''
