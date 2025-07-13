@@ -31,7 +31,7 @@ vm_size = "Standard_D2s_v5" #dlsv5, esv5
 #esv5 1:8
 
 #虚拟机可用区，只能设置1 或者2，或者3
-availabiltiy_zone = "1"
+availability_zone = "1"
 #自定义标签
 custom_tags = {
     'Environment': 'Development',
@@ -127,7 +127,7 @@ vm = compute_client.virtual_machines.begin_create_or_update(
         #},
   
         "zones": [
-            availabiltiy_zone
+            availability_zone
         ],
         "hardware_profile": {
             "vm_size": vm_size

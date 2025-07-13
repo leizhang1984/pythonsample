@@ -42,8 +42,10 @@ def create_vm(n):
 
     vm_size = "Standard_D2s_v5" #dlsv5, esv5
 
-    #虚拟机可用区，只能设置1 或者2，或者3
-    availabiltiy_zone = "2"
+    
+    # 虚拟机可用区，1, 2, 3 轮流使用
+    # 也可以直接设置为 1， 或者2，或者3
+    availability_zone = str((n % 3) + 1)
     #自定义标签
     custom_tags = {
         'Environment': 'Development',
@@ -289,7 +291,7 @@ def create_vm(n):
                 # "publisher": "resf"
                 # },
                 "zones": [
-                    availabiltiy_zone
+                    availability_zone
                 ],
                 "hardware_profile": {
                     "vm_size": vm_size

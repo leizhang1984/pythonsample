@@ -43,7 +43,7 @@ nic_name = vm_name + "-nic"
 vm_size = "Standard_D2s_v5" #dlsv5, esv5
 
 #虚拟机可用区，只能设置1 或者2，或者3
-availabiltiy_zone = "1"
+availability_zone = "1"
 #自定义标签
 custom_tags = {
     'Environment': 'Development',
@@ -173,7 +173,7 @@ except ResourceNotFoundError:
         disk = {
             "location": location,
             "zones": [
-                availabiltiy_zone
+                availability_zone
             ],
             "sku": {
                 "name": data_disk02_sku
