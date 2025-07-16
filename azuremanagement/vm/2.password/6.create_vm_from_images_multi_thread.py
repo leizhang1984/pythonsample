@@ -15,26 +15,26 @@ from concurrent.futures import ThreadPoolExecutor,as_completed
 
 def create_vm(n):
 
-    # tenantid = #os.environ.get('nonprod_tenantid')
-    # clientid = #os.environ.get('nonprod_clientid')
-    # clientsecret = #os.environ.get('nonprod_clientsecret')
+    tenantid = os.environ.get('nonprod_tenantid')
+    clientid = os.environ.get('nonprod_clientid')
+    clientsecret = os.environ.get('nonprod_clientsecret')
 
     #Azure数据中心
-    location = "westus3"
+    location = "germanywestcentral"
     #订阅ID
     sub_id = "166157a8-9ce9-400b-91c7-1d42482b83d6"
     #资源组
-    rg_name = "defaultrg"
+    rg_name = "jtvmss-rg"
     #virtual network name
-    vnet_name = "westus3-vnet"
+    vnet_name = "jt-vnet"
     #子网
     subnet_name = "vm-subnet"
 
     #之前提前创建好vmss，类型必须是Flexible，Initial instance count必须为0
-    vmss_name = "jtvmss05"
+    vmss_name = "jtvmss-zone123"
 
     #创建的虚拟机名称
-    vm_name = f"jtvmss05-{n}"
+    vm_name = f"jtvmss-group2-{n}"
     #计算机名称
     computer_name = vm_name
     #网卡名称
@@ -104,18 +104,20 @@ def create_vm(n):
     #proximityPlacementGroups，请注意PPG保证多台虚拟机在同一个数据中心，相距的物理位置更近，但是不是高可用方案
     #ppg_name="lei-ppg"
     # Azure 信息
-    tenant_id = "72f988bf-86f1-41af-91ab-2d7cd011db47"
-    client_id = "a4cecf84-6569-40ba-980b-8fa823e6dda8"
-    certificate_path = r"D:\Work\Doc\sdp-app.pem"
+    # tenant_id = "72f988bf-86f1-41af-91ab-2d7cd011db47"
+    # client_id = "a4cecf84-6569-40ba-980b-8fa823e6dda8"
+    # certificate_path = r"D:\Work\Doc\sdp-app.pem"
 
     # 使用证书认证
-    clientcredential = CertificateCredential(
-        tenant_id=tenant_id,
-        client_id=client_id,
-        certificate_path=certificate_path  # 证书路径
-    )
+    # clientcredential = CertificateCredential(
+    #     tenant_id=tenant_id,
+    #     client_id=client_id,
+    #     certificate_path=certificate_path  # 证书路径
+    # )
     # Create tenant_id
 
+    clientcredential = ClientSecretCredential(tenantid,clientid,clientsecret)
+    
 
     network_client = NetworkManagementClient(
         credential = clientcredential,
@@ -260,6 +262,8 @@ def create_vm(n):
                     },
                     "private_ip_allocation_method": "Dynamic"
                 }],
+                #先不使用网卡的安全组，所以把下面的内容注释掉
+
                 # "network_security_group": {
                 #     'id': nic_nsg_result.id
                 #     #/subscriptions/c4959ac6-4963-4b67-90dd-da46865b607f/resourceGroups/DEFAULTRG/providers/Microsoft.Network/networkSecurityGroups/NIO_PE_OPS
@@ -405,7 +409,7 @@ def main():
     #50个线程
     with ThreadPoolExecutor(max_workers=50) as executor:
         #创建10台虚拟机
-        futures = [executor.submit(create_vm, i) for i in range(0,100)]
+        futures = [executor.submit(create_vm, i) for i in range(0,400)]
         for future in futures:
             print(future.result())
 
