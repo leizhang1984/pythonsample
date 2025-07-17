@@ -34,7 +34,7 @@ def create_vm(n):
     vmss_name = "jtvmss-zone123"
 
     #创建的虚拟机名称
-    vm_name = f"jtvmss-group2-{n}"
+    vm_name = f"jtvmss-group5-{n}"
     #计算机名称
     computer_name = vm_name
     #网卡名称
@@ -43,9 +43,12 @@ def create_vm(n):
     vm_size = "Standard_D2s_v5" #dlsv5, esv5
 
     
-    # 虚拟机可用区，1, 2, 3 轮流使用
+    # 虚拟机可用区，1, 2, 3 做一个循环
+    #availability_zone = str((n % 3) + 1)
+
     # 也可以直接设置为 1， 或者2，或者3
-    availability_zone = str((n % 3) + 1)
+    availability_zone = 2
+
     #自定义标签
     custom_tags = {
         'Environment': 'Development',
@@ -409,7 +412,7 @@ def main():
     #50个线程
     with ThreadPoolExecutor(max_workers=50) as executor:
         #创建10台虚拟机
-        futures = [executor.submit(create_vm, i) for i in range(0,400)]
+        futures = [executor.submit(create_vm, i) for i in range(0,80)]
         for future in futures:
             print(future.result())
 
