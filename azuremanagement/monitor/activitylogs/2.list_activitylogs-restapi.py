@@ -40,7 +40,8 @@ def main():
         f"eventTimestamp ge '{start_time.isoformat()}' and "
         f"eventTimestamp le '{end_time.isoformat()}' and "
         #"resourceProvider eq 'Microsoft.Compute'"
-        " operations eq 'Microsoft.Compute/virtualMachines/runCommand/action'"
+        #" operations eq 'Microsoft.Compute/virtualMachines/runCommand/action'"
+        "operations eq 'Microsoft.Compute/virtualMachines/runCommand/action,Microsoft.Compute/virtualMachineScaleSets/virtualMachines/runCommand/action'"
     )
 
     # 构建请求URL

@@ -22,12 +22,12 @@ def main():
     start_time = end_time - timedelta(days=7)
 
     # 定义过滤条件，使用换行符提高可读性
-
+    # 用python sdk只能filter: resourceProvider。不能filter其他内容
     filter_condition = (
         f"eventTimestamp ge '{start_time.isoformat()}' and "
         f"eventTimestamp le '{end_time.isoformat()}' and "
-        "resourceProvider eq 'Microsoft.Compute'"
-        #"operationName eq 'Microsoft.Compute/virtualMachines/runCommand/action'"
+        "resourceProvider eq 'Microsoft.Compute' and "
+        #"operations eq 'Microsoft.Compute/virtualMachines/runCommand/action'"
     )
 
     # 查询活动日志
