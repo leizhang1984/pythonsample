@@ -14,7 +14,7 @@ https://github.com/Azure-Samples/azure-samples-python-management/blob/main/sampl
 
 tenantid = os.environ.get('nonprod_tenantid')
 clientid = os.environ.get('nonprod_clientid')
-clientsecret = "7vh8Q~0WNmHFNf7TssG7mLKNtRP0Q2w7NeCNjas~" #os.environ.get('nonprod_clientsecret')
+clientsecret = os.environ.get('nonprod_clientsecret')
 
 subscriptionid = "166157a8-9ce9-400b-91c7-1d42482b83d6"
 
