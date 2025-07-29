@@ -97,14 +97,16 @@ def run_threads(target_url, port, thread_count, requests_count):
 # ==============================
 if __name__ == "__main__":
     target_url = "https://gwlb.leiweb.net"
+    #target_url = "http://pa-nlb-876b517a8941d030.elb.ap-east-1.amazonaws.com/"
     
     # print("\n" + "=" * 50)
     # print("测试方案二：原始 socket 实现")
     # raw_socket_keepalive(target_url, port=443)
 
-    thread_count = 30  # 线程数量
+    thread_count = 1  # 线程数量
     requests_count = 600  # 每个线程的请求数量
 
     print("\n" + "=" * 50)
     print("测试方案二：原始 socket 实现")
     run_threads(target_url, port=443, thread_count=thread_count, requests_count=requests_count)
+    #run_threads(target_url, port=443, thread_count=thread_count, requests_count=requests_count)
