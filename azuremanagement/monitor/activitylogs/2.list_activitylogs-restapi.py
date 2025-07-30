@@ -20,53 +20,67 @@ def get_access_token(tenant_id, client_id, client_secret):
         print(f"Failed to obtain access token: {response.status_code}, {response.text}")
         response.raise_for_status()
 
+def get_subscriptions(token):
+    url = "https://management.azure.com/subscriptions?api-version=2020-01-01"
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json().get('value', [])
+    else:
+        print(f"Failed to retrieve subscriptions: {response.status_code}, {response.text}")
+        response.raise_for_status()
+
+def get_activity_logs(subscription_id, token, start_time, end_time):
+    filter_condition = (
+        f"eventTimestamp ge '{start_time.isoformat()}' and "
+        f"eventTimestamp le '{end_time.isoformat()}' and "
+        "operations eq 'Microsoft.Compute/virtualMachines/runCommand/action,Microsoft.Compute/virtualMachineScaleSets/virtualMachines/runCommand/action'"
+    )
+    url = f"https://management.azure.com/subscriptions/{subscription_id}/providers/microsoft.insights/eventtypes/management/values?api-version=2017-03-01-preview&$filter={filter_condition}"
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json().get('value', [])
+    else:
+        print(f"Failed to retrieve activity logs for subscription {subscription_id}: {response.status_code}, {response.text}")
+        response.raise_for_status()
+
 def main():
     tenant_id = os.environ.get('nonprod_tenantid')
     client_id = os.environ.get('nonprod_clientid')
     client_secret = os.environ.get('nonprod_clientsecret')
 
-    # 设置订阅ID
-    subscription_id = '166157a8-9ce9-400b-91c7-1d42482b83d6'
-
     # 获取访问令牌
     token = get_access_token(tenant_id, client_id, client_secret)
+
+    # 获取所有订阅
+    subscriptions = get_subscriptions(token)
 
     # 定义查询时间范围，例如过去 7 天
     end_time = datetime.now()
     start_time = end_time - timedelta(days=7)
 
-    # 定义过滤条件
-    filter_condition = (
-        f"eventTimestamp ge '{start_time.isoformat()}' and "
-        f"eventTimestamp le '{end_time.isoformat()}' and "
-        #"resourceProvider eq 'Microsoft.Compute'"
-        #" operations eq 'Microsoft.Compute/virtualMachines/runCommand/action'"
-        "operations eq 'Microsoft.Compute/virtualMachines/runCommand/action,Microsoft.Compute/virtualMachineScaleSets/virtualMachines/runCommand/action'"
-    )
-
-    # 构建请求URL
-    url = f"https://management.azure.com/subscriptions/{subscription_id}/providers/microsoft.insights/eventtypes/management/values?api-version=2017-03-01-preview&$filter={filter_condition}"
-
-    headers = {
-        'Authorization': f'Bearer {token}',
-        'Content-Type': 'application/json'
-    }
-
-    # 发送请求
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        activity_logs = response.json()
+    for subscription in subscriptions:
+        subscription_id = subscription.get('subscriptionId')
+        print(f"Processing subscription: {subscription_id}")
+        
+        # 获取活动日志
+        activity_logs = get_activity_logs(subscription_id, token, start_time, end_time)
+        
         # 处理查询结果
-        for log in activity_logs.get('value', []):
+        for log in activity_logs:
             time_generated = log.get('eventTimestamp')
             caller = log.get('caller')
             resource_id = log.get('resourceId')
             operation_name = log.get('operationName', {}).get('value')
             status = log.get('status', {}).get('value')
             print(f"Time: {time_generated}, Caller: {caller}, Resource: {resource_id}, Operation: {operation_name}, Status: {status}")
-    else:
-        print(f"Failed to retrieve activity logs: {response.status_code}, {response.text}")
-        response.raise_for_status()
 
 if __name__ == '__main__':
     main()
