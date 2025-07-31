@@ -77,10 +77,11 @@ def main():
         for log in activity_logs:
             time_generated = log.get('eventTimestamp')
             caller = log.get('caller')
+            clientipaddress = log.get('httpRequest', {}).get('clientIpAddress')
             resource_id = log.get('resourceId')
             operation_name = log.get('operationName', {}).get('value')
             status = log.get('status', {}).get('value')
-            print(f"Time: {time_generated}, Caller: {caller}, Resource: {resource_id}, Operation: {operation_name}, Status: {status}")
+            print(f"Time: {time_generated}, Caller: {caller}, Client IP: {clientipaddress},Resource: {resource_id}, Operation: {operation_name}, Status: {status}")
 
 if __name__ == '__main__':
     main()
