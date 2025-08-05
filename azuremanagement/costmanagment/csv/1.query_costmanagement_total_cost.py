@@ -43,6 +43,12 @@ def main():
         response = cost_mgmt_client.query.usage(
             scope = f"subscriptions/{subscription_id}",  
             parameters={
+                "type": "Usage",
+                "timeframe": "Custom",
+                "timePeriod": {
+                    "from": start_date,
+                    "to": end_date
+                },
                 "dataset": {
                     # "filter": {
                     #     "and": [
@@ -61,21 +67,15 @@ def main():
                     #         {"dimensions": {"name": "ResourceGroup", "operator": "In", "values": ["API"]}},
                     #     ]
                     # },
+                    "granularity": "Monthly",
                     "aggregation": {
                         "totalCost": {
                             "name": "Cost",
                             "function": "Sum"
                         }
-                    },
-                    "granularity": "Monthly",
-                },
-                "timeframe": "Custom",
-                "timePeriod": {
-                    "from": start_date,
-                    "to": end_date
-                },
-                "type": "Usage",
-            },
+                    }
+                }        
+            }
         )
 
         for row in response.rows:
