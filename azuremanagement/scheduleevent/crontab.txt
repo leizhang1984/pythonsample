@@ -1,0 +1,1 @@
+* * * * * /usr/bin/python3 /root/scheduleevent-feishu.py >> /root/schedule-feishu.log 2>&1

@@ -34,12 +34,8 @@ def main():
     events = get_scheduled_events()
     if events.get("Events"):
         send_to_feishu(events)
-    #else:
-        #log_message("No event to send.")
+    else:
+        log_message("No event to send.")
 
 if __name__ == "__main__":
     main()
-
-
-# [root@prometheus01 ~]# crontab -l
-# * * * * * /usr/bin/python3 /root/scheduleevent-feishu.py >> /root/schedule-feishu.log 2>&1
