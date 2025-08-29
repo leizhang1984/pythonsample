@@ -25,7 +25,11 @@ def main():
 
     osdiskinfo = compute_client.disks.get(rg_name, osdiskname)
 
-    print("Get Disk Info:\n{}".format(osdiskinfo))
+    print(f"Disk Name: {osdiskinfo.name}")
+    print(f"  Disk Size (GB): {osdiskinfo.disk_size_gb}")
+    print(f"  Disk SKU: {osdiskinfo.sku.name}")
+    print(f"  Provisioned IOPS: {osdiskinfo.disk_iops_read_write}")
+    print(f"  Provisioned Throughput (MB/s): {osdiskinfo.disk_m_bps_read_write}")
 
 if __name__ == '__main__':
     main()
