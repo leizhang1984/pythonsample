@@ -12,8 +12,10 @@ from azure.mgmt.resourcegraph.models import QueryRequest
 from azure.mgmt.monitor import MonitorManagementClient
 
 input_prompt = ""
+
+#在这里描述问题
 default_prompt = "请帮我找内网为10.99.76.10这台虚拟机,在北京时间2025年9月2日下午3点10分有没有问题。"
-#通过内网ip，获得虚拟机的资源id，资源组和虚拟机名称
+
 # 通过内网ip，获得虚拟机的资源id，资源组和虚拟机名称
 def get_vm_resource_graph_byip(tenant_id, client_id, client_secret, private_ip_address):
 
