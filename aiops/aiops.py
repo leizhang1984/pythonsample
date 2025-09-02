@@ -237,8 +237,16 @@ def request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time):
     response_content  = response.choices[0].message.content
     print(response_content)
 
+    # 获取当前时间并格式化为字符串
+    current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    file_name = f"output_{current_time}.txt"
 
+    # 打开文件并写入内容
+    with open(file_name, "w", encoding="utf-8") as file:
+        file.write(response_content)
 
+    print(f"内容已导出到 {file_name}")
+    
 
 
 def request_openai():
