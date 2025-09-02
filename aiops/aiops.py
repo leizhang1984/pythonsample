@@ -174,7 +174,7 @@ def get_vm_monitor_metrics(tenant_id, client_id, client_secret,subscription_id, 
     aggregation = "Maximum"
 
     #metric_result = monitor_client.metrics.list(resource_id,timespan,"PT5M",metric_name,aggregation,None,None,None)
-    metric_result = monitor_client.metrics.list(resource_id,timespan,"PT5M",metric_name,aggregation,None,None,None)
+    metric_result = monitor_client.metrics.list(resource_id,timespan,"PT1M",metric_name,aggregation,None,None,None)
 
     # 设置时区信息
     utc = pytz.utc
