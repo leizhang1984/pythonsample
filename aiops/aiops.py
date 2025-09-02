@@ -176,6 +176,10 @@ def get_vm_monitor_metrics(tenant_id, client_id, client_secret,subscription_id, 
     #metric_result = monitor_client.metrics.list(resource_id,timespan,"PT5M",metric_name,aggregation,None,None,None)
     metric_result = monitor_client.metrics.list(resource_id,timespan,"PT5M",metric_name,aggregation,None,None,None)
 
+    # 设置时区信息
+    utc = pytz.utc
+    beijing_tz = pytz.timezone('Asia/Shanghai')
+
     # 遍历 metric_result 中的所有值
     for metric in metric_result.value:
         #print(f"Metric: {metric.name.localized_value} ({metric.name.value})")
@@ -189,9 +193,17 @@ def get_vm_monitor_metrics(tenant_id, client_id, client_secret,subscription_id, 
                 # if data.minimum is not None:
                 #     print(f"Minimum: {data.minimum}")
                 if data.maximum is not None:
-                    #print(f"Maximum: {data.maximum}")
+                    # data.time_stamp 已经是一个 datetime 对象，直接进行时区转换
+                    utc_time = data.time_stamp.replace(tzinfo=utc)
+                    # 转换为北京时间
+                    beijing_time = utc_time.astimezone(beijing_tz)
+                    # 格式化为字符串
+                    beijing_time_str = beijing_time.strftime("%Y-%m-%d %H:%M:%S")
+                    # print(f"Maximum: {data.maximum}")
                     global input_prompt
-                    input_prompt+= f"在时间:{data.time_stamp},发现虚拟机的监控指标:{metric.name.localized_value}, 当时的最大值是:{data.maximum}"
+                    input_prompt += f"在北京时间:{beijing_time_str},发现虚拟机的监控指标:{metric.name.localized_value}, 当时的最大值是:{data.maximum}\n"
+
+            # if data.count is no
                 # if data.count is not None:
                 #     print(f"Count: {data.count}")
 
@@ -199,8 +211,8 @@ def get_vm_monitor_metrics(tenant_id, client_id, client_secret,subscription_id, 
 def request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time):
     # Initialize the Azure OpenAI client
     client = AzureOpenAI(
-        azure_endpoint = "https://yourdns.openai.azure.com/",
-        api_key = "your_azure_openai_apikey",
+        azure_endpoint = os.environ.get('azure_openai_endpoint'),
+        api_key = os.environ.get('azure_openai_key'),
         api_version = "2023-08-01-preview"
     )
     # 定义 prompt
@@ -220,8 +232,7 @@ def request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time):
                 "1.  **预配 vs. 消耗 (Provisioned vs. Consumed)**：每个 Azure 磁盘 SKU（如 Standard_LRS, Premium_P30, Ultra）都带有明确的性能目标：预配的 IOPS（每秒读写次数）和吞吐量（MB/s）。我们监控的“磁盘已用百分比”就是将实际消耗值与这个预配目标进行比较。\n"
                 "2.  **性能瓶颈与限流 (Bottleneck & Throttling)***: 当“磁盘已用 IOPS 百分比”或“磁盘已用带宽百分比”**持续**接近或达到 100% 时，意味着磁盘性能已达到其预配上限。* 一旦超过 100%，Azure 平台会开始对磁盘进行**限流 (Throttling)**。这会导致磁盘请求被强制延迟或拒绝，磁盘的平均延迟 (Latency) 会急剧上升，从而严重影响上层虚拟机和应用的性能，甚至导致应用超时或崩溃。**识别限流风险是你分析的首要任务**。\n"
                 "3.  **突发性能 (Bursting)**：某些磁盘类型（如 Standard SSD、Premium SSD v1）支持性能突发。它们可以短时间内超越预配的性能目标。在分析时，你需要区分是健康的、短暂的性能突发，还是预示着磁盘规格不足的、持续性的高负载。持续的高负载最终会耗尽突发信用点，导致更严重的限流。\n"
-                "4.  **延迟 (Latency)**：延迟是衡量磁盘健康状况的最终体现。一个健康的磁盘，其延迟应该稳定且在个位数毫秒（对于 SSD）。延迟的突然飙升，通常是高 IOPS/吞吐量导致限流的直接症状。\n"
-                "下面提供的日志都是UTC时区，请帮我直接转换为UTC+8北京时区，同时不要在结果中展示UTC时区，并进行分析"                
+                "4.  **延迟 (Latency)**：延迟是衡量磁盘健康状况的最终体现。一个健康的磁盘，其延迟应该稳定且在个位数毫秒（对于 SSD）。延迟的突然飙升，通常是高 IOPS/吞吐量导致限流的直接症状。\n"          
             )
         },
         {"role": "user", "content": f"{prompt}"}
@@ -252,8 +263,8 @@ def request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time):
 def request_openai():
     # Initialize the Azure OpenAI client
     client = AzureOpenAI(
-        azure_endpoint = "https://yourdns.openai.azure.com/",
-        api_key = "your_azure_openai_apikey",
+        azure_endpoint = os.environ.get('azure_openai_endpoint'),
+        api_key = os.environ.get('azure_openai_key'),
         api_version = "2023-08-01-preview"
     )
     # 定义 prompt
