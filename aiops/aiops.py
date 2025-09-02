@@ -200,7 +200,7 @@ def request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time):
     # Initialize the Azure OpenAI client
     client = AzureOpenAI(
         azure_endpoint = "https://leiopenai00.openai.azure.com/",
-        api_key = "your_openai_apikey",
+        api_key = "your_azure_openai_apikey",
         api_version = "2023-08-01-preview"
     )
     # 定义 prompt
@@ -245,7 +245,7 @@ def request_openai():
     # Initialize the Azure OpenAI client
     client = AzureOpenAI(
         azure_endpoint = "https://leiopenai00.openai.azure.com/",
-        api_key = "your_openai_apikey",
+        api_key = "your_azure_openai_apikey",
         api_version = "2023-08-01-preview"
     )
     # 定义 prompt
