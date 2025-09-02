@@ -199,7 +199,7 @@ def get_vm_monitor_metrics(tenant_id, client_id, client_secret,subscription_id, 
 def request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time):
     # Initialize the Azure OpenAI client
     client = AzureOpenAI(
-        azure_endpoint = "https://leiopenai00.openai.azure.com/",
+        azure_endpoint = "https://yourdns.openai.azure.com/",
         api_key = "your_azure_openai_apikey",
         api_version = "2023-08-01-preview"
     )
@@ -244,7 +244,7 @@ def request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time):
 def request_openai():
     # Initialize the Azure OpenAI client
     client = AzureOpenAI(
-        azure_endpoint = "https://leiopenai00.openai.azure.com/",
+        azure_endpoint = "https://yourdns.openai.azure.com/",
         api_key = "your_azure_openai_apikey",
         api_version = "2023-08-01-preview"
     )
