@@ -37,7 +37,6 @@ def main():
             | extend Category = properties['changes']['properties.category']['newValue'] 
             | extend ImpactType = properties['changes']['properties.impactType']['newValue'] 
             | extend AnnotationName = split(properties['changes']['properties.annotationName']['newValue'], '//')[0] 
-            | where AnnotationName in~ ('VirtualMachineHostCrashed', 'VirtualMachineHostRebootedForRepair', 'VirtualMachineMigrationInitiatedForRepair', 'VirtualMachineStorageOffline', 'VirtualMachinePossiblyDegradedDueToHardwareFailureWithRedeployDeadline', 'VirtualMachineMigrationScheduledForDegradedHardware', 'VirtualMachinePossiblyDegradedDueToHardwareFailure', 'VirtualMachineScheduledForServiceHealing', 'AccelnetUnhealthy', 'LiveMigrationSucceeded', 'LiveMigrationFailure', 'VirtualMachineMigrationInitiatedForPlannedMaintenance', 'VirtualMachineRebootInitiatedForPlannedMaintenance', 'VirtualMachinePlannedFreezeSucceeded', 'VirtualMachinePlannedFreezeFailed', 'VirtualMachineProvisioningTimedOut', 'VirtualMachineCrashed') 
             | extend Reason = properties['changes']['properties.reason']['newValue'] 
             | extend Summary = properties['changes']['properties.summary']['newValue'] 
             | join kind=leftouter (resources
@@ -53,7 +52,22 @@ def main():
     )
 
     query_response = resourcegraph_client.resources(query)
-    print("vm availaibiltiy result:\n{}".format(query_response))
+
+     # Assuming query_response.data contains the results
+    for result in query_response.data:
+        print(f"Timestamp: {result['Timestamp']}")
+        print(f"ResourceId: {result['ResourceId']}")
+        print(f"Subscription: {result['Sub']}")
+        print(f"Resource Group: {result['RG']}")
+        print(f"VM Name: {result['VMName']}")
+        print(f"Context: {result['Context']}")
+        print(f"Category: {result['Category']}")
+        print(f"Impact Type: {result['ImpactType']}")
+        print(f"Annotation Name: {result['AnnotationName']}")
+        print(f"Reason: {result['Reason']}")
+        print(f"Summary: {result['Summary']}")
+        print(f"Private IPs: {result['privateIPs']}")
+        print("-----")
 
 if __name__ == '__main__':
     main()
