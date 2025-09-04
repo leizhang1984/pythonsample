@@ -247,16 +247,19 @@ def request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time):
                 "4.  **延迟 (Latency)**：延迟是衡量磁盘健康状况的最终体现。一个健康的磁盘，其延迟应该稳定且在个位数毫秒（对于 SSD）。延迟的突然飙升，通常是高 IOPS/吞吐量导致限流的直接症状。\n"       
                 
                 "回复的内容必须遵循以下格式：\n"
-                "第1部分.发现在时间段yyyy-mm-dd mm:ss，检查内网ip为xxx.xxx.xxx.xxx的虚拟机，根据提供的Azure Resource Health，发现日志是： \n"
+                f"第1部分，问题描述: {default_prompt} \n"
+                
+                "第2部分，关键性能指标。发现在时间段yyyy-mm-dd mm:ss，检查内网ip为xxx.xxx.xxx.xxx的虚拟机，根据提供的Azure Resource Health，发现日志是： \n"
                 "   这里提供规定时间范围内，所有的Azure Resource Health内容，可以支持多行 \n"
                 "根据提供的虚拟机性能指标，发现指标值是： \n"
                 "   这里提供规定时间范围内，所有的Azure性能指标时间和具体的日志，可以支持多行 \n"
                 "- 这里提供具体的指标名称，和最大值 \n"
+                "  如果是一个新的指标值，请单独插入一个空行"
 
 
-                "第2部分.根据目前的性能指标，发现可能存在的性能瓶颈和问题是： \n"
-                "第3部分.优化建议是 \n"
-                "第4部分.结论是在这个时间段内有发现性能问题，主要问题是:xxxxx，建议的方案是。或者没有发现性能问题xxxx \n"
+                "第3部分.根据目前的性能指标，发现可能存在的性能瓶颈和问题是： \n"
+                "第4部分.优化建议是 \n"
+                "第5部分.结论是在这个时间段内有发现性能问题，主要问题是:xxxxx，建议的方案是。或者没有发现性能问题xxxx \n"
             )
         },
         {"role": "user", "content": f"{prompt}"}
