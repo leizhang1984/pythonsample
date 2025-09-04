@@ -266,7 +266,7 @@ def request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time):
     ]
 
     response = client.chat.completions.create(
-        model = "gpt-4o",  # Replace with your deployed model name
+        model = "gpt-4.1",  # Replace with your deployed model name
         messages = messages,
         #temperature = 0.7,  # Optional: Controls randomness of output
         #max_tokens = 150    # Optional: Limits the length of the response
@@ -307,7 +307,7 @@ def request_openai():
     ]
 
     response = client.chat.completions.create(
-        model = "gpt-4o",  # Replace with your deployed model name
+        model = "gpt-4.1",  # Replace with your deployed model name
         messages = messages,
         #temperature = 0.7,  # Optional: Controls randomness of output
         #max_tokens = 150    # Optional: Limits the length of the response
