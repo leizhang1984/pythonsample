@@ -37,6 +37,7 @@ def main():
             | extend Category = properties['changes']['properties.category']['newValue'] 
             | extend ImpactType = properties['changes']['properties.impactType']['newValue'] 
             | extend AnnotationName = split(properties['changes']['properties.annotationName']['newValue'], '//')[0] 
+            | where AnnotationName in~ ('VirtualMachineHostCrashed', 'VirtualMachineHostRebootedForRepair', 'VirtualMachineMigrationInitiatedForRepair', 'VirtualMachineStorageOffline', 'VirtualMachinePossiblyDegradedDueToHardwareFailureWithRedeployDeadline', 'VirtualMachineMigrationScheduledForDegradedHardware', 'VirtualMachinePossiblyDegradedDueToHardwareFailure', 'VirtualMachineScheduledForServiceHealing', 'AccelnetUnhealthy', 'LiveMigrationSucceeded', 'LiveMigrationFailure', 'VirtualMachineMigrationInitiatedForPlannedMaintenance', 'VirtualMachineRebootInitiatedForPlannedMaintenance', 'VirtualMachinePlannedFreezeSucceeded', 'VirtualMachinePlannedFreezeFailed', 'VirtualMachineProvisioningTimedOut', 'VirtualMachineCrashed') 
             | extend Reason = properties['changes']['properties.reason']['newValue'] 
             | extend Summary = properties['changes']['properties.summary']['newValue'] 
             | join kind=leftouter (resources
