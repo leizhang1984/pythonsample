@@ -10,6 +10,7 @@ from azure.mgmt.resource import SubscriptionClient
 from azure.mgmt.resourcegraph import ResourceGraphClient
 from azure.mgmt.resourcegraph.models import QueryRequest
 from azure.mgmt.monitor import MonitorManagementClient
+from azure.mgmt.resource import ResourceManagementClient
 
 input_prompt = ""
 
@@ -90,6 +91,46 @@ def get_vm_resource_graph_byip(tenant_id, client_id, client_secret, private_ip_a
                 except ValueError:
                     print("输入的不是有效的数字，请重新选择")
 
+#获得VM的活动日志
+def get_vm_activity_log(tenant_id, client_id, client_secret,subscription_id, rg_name, vm_name, vm_id, issue_time_str):
+    # 使用ClientSecretCredential进行身份验证
+    credential = ClientSecretCredential(tenant_id, client_id, client_secret)
+
+     # 创建 MonitorManagementClient 实例
+    monitor_client = MonitorManagementClient(credential, subscription_id)
+    
+     # 创建 ResourceManagementClient 实例
+    resource_client = ResourceManagementClient(credential, subscription_id)
+
+    #把客户上报的时间，改为ISO格式
+    #解析时间字符串为 datetime 对象
+    original_time = datetime.fromisoformat(issue_time_str)
+
+    # 将时间转换为 UTC
+    utc_time = original_time.astimezone(pytz.utc)
+
+    # 计算开始时间，这里假设结束时间是开始时间，减少30 minutes
+    # start_time = utc_time + timedelta(hours=-1)
+    start_time = utc_time + timedelta(minutes=-30)
+
+    # 计算结束时间，这里假设结束时间是开始时间加30 minutes
+    end_time = utc_time + timedelta(minutes=30)
+
+    # 格式化为所需的字符串格式
+    start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+    end_time_str = end_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # 构建查询过滤器
+    filter_query = f"eventTimestamp ge '{start_time_str}' and eventTimestamp le '{end_time_str}' and resourceId eq '{vm_id}'"
+
+    # 获取活动日志
+    activity_logs = monitor_client.activity_logs.list(filter=filter_query)
+
+    # 打印活动日志
+    for log in activity_logs:
+        global input_prompt
+        input_prompt += f"在时间: {log.event_timestamp}, 发现虚拟机的活动日志: {log.operation_name.localized_value}, 执行状态是: {log.status.localized_value} "
+
 
                 
 #获得VM的Resource Health
@@ -166,9 +207,14 @@ def get_vm_monitor_metrics(tenant_id, client_id, client_secret,subscription_id, 
     #Available Memory Percentage    代表可用内存百分比
     #Network In Total               代表入向流量
     #Network Out Total              代表出向流量
-    metric_name = "Percentage CPU,Available Memory Percentage,VmAvailabilityMetric,"
-    metric_name += "OS Disk Bandwidth Consumed Percentage,OS Disk IOPS Consumed Percentage,"
-    metric_name += "Data Disk Bandwidth Consumed Percentage,Data Disk IOPS Consumed Percentage"
+
+    #Bandwidth Consumed Percentage  代表消耗的带宽百分比
+
+    #Queue Depth                    代表队列深度
+    metric_name = "Percentage CPU,Available Memory Percentage,VmAvailabilityMetric"
+    metric_name += ",OS Disk Bandwidth Consumed Percentage,OS Disk IOPS Consumed Percentage"
+    metric_name += ",Data Disk Bandwidth Consumed Percentage,Data Disk IOPS Consumed Percentage"
+    metric_name += ",OS Disk Queue Depth,Data Disk Queue Depth"
 
     #aggregation = "average,total"
     aggregation = "Maximum"
@@ -249,13 +295,16 @@ def request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time):
                 "回复的内容必须遵循以下格式：\n"
                 f"第1部分，问题描述: {default_prompt} \n"
                 
-                "第2部分，关键性能指标。发现在时间段yyyy-mm-dd mm:ss，检查内网ip为xxx.xxx.xxx.xxx的虚拟机，根据提供的Azure Resource Health，发现日志是： \n"
-                "   这里提供规定时间范围内，所有的Azure Resource Health内容，可以支持多行 \n"
+                "第2部分，关键性能指标。发现在时间段yyyy-mm-dd mm:ss，检查内网ip为xxx.xxx.xxx.xxx的虚拟机，检查Azure活动日志Activity Log，发现日志是： \n"
+                "这里提供规定时间范围内，所有的活动日志Activity Log的总结 \n"
+
+                "检查Azure Resource Health，发现日志是： \n"
+                "这里提供规定时间范围内，所有的Azure Resource Health内容，可以支持多行 \n"
+
                 "根据提供的虚拟机性能指标，发现指标值是： \n"
-                "   这里提供规定时间范围内，所有的Azure性能指标时间和具体的日志，可以支持多行 \n"
+                "这里提供规定时间范围内，所有的Azure性能指标时间和具体的日志，可以支持多行 \n"
                 "- 这里提供具体的指标名称，和最大值 \n"
                 "  如果是一个新的指标值，请单独插入一个空行"
-
 
                 "第3部分.根据目前的性能指标，发现可能存在的性能瓶颈和问题是： \n"
                 "第4部分.优化建议是 \n"
@@ -331,6 +380,7 @@ def main():
 
     private_ip, issue_time = request_openai()
     vm_id, subscription_id,vm_name, rg_name, private_ip = get_vm_resource_graph_byip(tenant_id, client_id, client_secret, private_ip)
+    get_vm_activity_log(tenant_id,client_id,client_secret,subscription_id,rg_name,vm_name,vm_id,issue_time)
     get_vm_resource_health(tenant_id,client_id,client_secret,subscription_id,rg_name,vm_name,vm_id)
     get_vm_monitor_metrics(tenant_id,client_id,client_secret,subscription_id,rg_name,vm_name,vm_id,issue_time)
     request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time)
