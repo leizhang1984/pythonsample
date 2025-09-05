@@ -11,6 +11,7 @@ from azure.mgmt.resourcegraph import ResourceGraphClient
 from azure.mgmt.resourcegraph.models import QueryRequest
 from azure.mgmt.monitor import MonitorManagementClient
 from azure.mgmt.resource import ResourceManagementClient
+from dateutil import parser
 
 input_prompt = ""
 
@@ -102,23 +103,16 @@ def get_vm_activity_log(tenant_id, client_id, client_secret,subscription_id, rg_
      # 创建 ResourceManagementClient 实例
     resource_client = ResourceManagementClient(credential, subscription_id)
 
-    #把客户上报的时间，改为ISO格式
-    #解析时间字符串为 datetime 对象
-    original_time = datetime.fromisoformat(issue_time_str)
+    # 解析带有时区信息的字符串为 datetime 对象
+    issue_time = datetime.fromisoformat(issue_time_str)
 
-    # 将时间转换为 UTC
-    utc_time = original_time.astimezone(pytz.utc)
+    # 计算前30分钟
+    start_time = issue_time - timedelta(minutes=30)
+    start_time_str = start_time.isoformat()
 
-    # 计算开始时间，这里假设结束时间是开始时间，减少30 minutes
-    # start_time = utc_time + timedelta(hours=-1)
-    start_time = utc_time + timedelta(minutes=-30)
-
-    # 计算结束时间，这里假设结束时间是开始时间加30 minutes
-    end_time = utc_time + timedelta(minutes=30)
-
-    # 格式化为所需的字符串格式
-    start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
-    end_time_str = end_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+    #计算后30分钟
+    end_time =  issue_time + timedelta(minutes=30)
+    end_time_str = end_time.isoformat()
 
     # 构建查询过滤器
     filter_query = f"eventTimestamp ge '{start_time_str}' and eventTimestamp le '{end_time_str}' and resourceId eq '{vm_id}'"
@@ -173,7 +167,6 @@ def get_vm_monitor_metrics(tenant_id, client_id, client_secret,subscription_id, 
     #获得虚拟机的信息
     #vm = compute_client.virtual_machines.get(resource_group_name,vm_name)
     resource_id = vm_id
-
     #把客户上报的时间，改为ISO格式
     #解析时间字符串为 datetime 对象
     original_time = datetime.fromisoformat(issue_time_str)
@@ -191,7 +184,7 @@ def get_vm_monitor_metrics(tenant_id, client_id, client_secret,subscription_id, 
     # 格式化为所需的字符串格式
     start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
     end_time_str = end_time.strftime("%Y-%m-%dT%H:%M:%SZ")
-
+    
     # 拼接成最终的格式
     timespan = f"{start_time_str}/{end_time_str}"
     #timespan = '2025-04-11T08:38:00Z/2025-04-11T09:00:00Z'
@@ -301,10 +294,9 @@ def request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time):
                 "检查Azure Resource Health，发现日志是： \n"
                 "这里提供规定时间范围内，所有的Azure Resource Health内容，可以支持多行 \n"
 
-                "根据提供的虚拟机性能指标，发现指标值是： \n"
-                "这里提供规定时间范围内，所有的Azure性能指标时间和具体的日志，可以支持多行 \n"
-                "- 这里提供具体的指标名称，和最大值 \n"
-                "  如果是一个新的指标值，请单独插入一个空行"
+                "发现虚拟机的监控指标： \n"
+                "这里详细描述问题发生的前30分钟到后30分钟，每一个Azure性能指标，包含时间，指标名称，最大值，可以支持多行数据 \n"
+                "如果是一个新的指标值，请单独插入一个空行 \n"
 
                 "第3部分.根据目前的性能指标，发现可能存在的性能瓶颈和问题是： \n"
                 "第4部分.优化建议是 \n"
