@@ -1,59 +1,127 @@
-import os
-import asyncio
-
-from azure.identity import DefaultAzureCredential
-from azure.mgmt.authorization import AuthorizationManagementClient
 from azure.identity import ClientSecretCredential
-#pip install msgraph-sdk
+from azure.mgmt.resource import SubscriptionClient
+from azure.mgmt.authorization import AuthorizationManagementClient
 from msgraph import GraphServiceClient
+import os,requests
 
-tenantid = os.environ.get('msdn_tenantid')
-clientid = os.environ.get('msdn_clientid')
-clientsecret = os.environ.get('msdn_clientsecret')
+#查找分配的是一个用户，还是一个Application应用程序
+def get_principal_name(tenant_id,client_id,client_secret, principal_id):
+    # 1.先获得Access Token
+    token_endpoint = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token'
 
-#订阅ID
-sub_id = "b5aa1700-1510-4f35-b134-fe9c7c695df1"
+    # Define the required parameters for the token endpoint
+    data = {
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'scope': 'https://graph.microsoft.com/.default',
+        'grant_type': 'client_credentials'
+    }
+    # Make a request to the token endpoint to obtain an access token
+    response = requests.post(token_endpoint, data=data)
 
-#Management API
-credential = ClientSecretCredential(tenantid,clientid,clientsecret)
-authorization_client  = AuthorizationManagementClient(
-    credential = credential,
-    subscription_id = sub_id
-)
+    # 获得Access Token, Access Token的有效期为3600秒
+    access_token = response.json()['access_token']
 
-#Graph API
-# Create a credential object. Used to authenticate requests
-### https://github.com/microsoftgraph/msgraph-sdk-python/blob/main/docs/users_samples.md
-# Create a credential object. Used to authenticate requests
+    url = f"https://graph.microsoft.com/v1.0/users/{principal_id}"
 
-scopes = ['https://graph.microsoft.com/.default']
-graph_service_client = GraphServiceClient(credentials=credential, scopes=scopes)
+    headers = {'Authorization': f'Bearer {access_token}',
+               'ConsistencyLevel': 'eventual'}
 
+     # 尝试获取用户信息
+     # 用户就是 类似 leizha@jt.com
+    user_url = f"https://graph.microsoft.com/v1.0/users/{principal_id}"
+    response = requests.get(user_url, headers=headers)
+    if response.status_code == 200:
+        user_data = response.json()
+        return user_data['displayName'], user_data['userPrincipalName'], user_data['id']
 
-####################过滤条件####################
-filterstring = "atScope()"
-#filterstring = "principalID eq 'c21fc638-374c-4c63-8061-727a1c69e802'"
-#filterstring = "assignedtp('{value}')"
+    # 尝试获取用户组信息
+    group_url = f"https://graph.microsoft.com/v1.0/groups/{principal_id}"
+    response = requests.get(group_url, headers=headers)
+    if response.status_code == 200:
+        group_data = response.json()
+        return group_data['displayName'], None, group_data['id']
 
-'''
-https://github.com/Azure-Samples/azure-samples-python-management/blob/main/samples/authorization/manage_role_management_policy.py
-'''
-####################找到之前分配的权限################
-#role_assignment= authorization_client.role_assignments.list_for_subscription(filterstring,None)
-role_assignment = authorization_client.role_assignments.list_for_subscription(None,None)
+    # 尝试获取应用程序信息
+    app_url = f"https://graph.microsoft.com/v1.0/applications/{principal_id}"
+    response = requests.get(app_url, headers=headers)
+    if response.status_code == 200:
+        app_data = response.json()
+        return app_data['displayName'], None, app_data['id']
+    
+    # 尝试获取Service Principal
+    app_url = f"https://graph.microsoft.com/v1.0/servicePrincipals/{principal_id}"
+    response = requests.get(app_url, headers=headers)
+    if response.status_code == 200:
+        app_data = response.json()
+        return app_data['displayName'], None, app_data['id']
 
-async def async_for():
-    for ra in role_assignment:
-        #ra.role_definition_id = role definition id
-        #/subscriptions/b5aa1700-1510-4f35-b134-fe9c7c695df1/providers/Microsoft.Authorization/roleDefinitions/ba92f5b4-2d11-453d-a403-e96b0029c9fe
+    return 'Unknown Principal', None, None
+
+# 找到订阅分配的角色
+def get_role_assignments(tenant_id,client_id,client_secret, subscription_id):
+    credential = ClientSecretCredential(tenant_id, client_id, client_secret)
+    authorization_client = AuthorizationManagementClient(credential, subscription_id)
+    role_assignments = authorization_client.role_assignments.list_for_subscription(None,None)
+    
+    for role_assignment in role_assignments:
+        principal_id = role_assignment.principal_id
+        role_definition_id = role_assignment.role_definition_id
+        #生效范围
+        roleassignment_scope = role_assignment.scope
         
-        #ra.id                 = role roleAssignments id
-        # /subscriptions/b5aa1700-1510-4f35-b134-fe9c7c695df1/resourcegroups/test-rg/providers/Microsoft.Authorization/roleAssignments/c99a2fb0-81ec-495a-8b26-1ce87ab9307a
+        # 获取用户名或应用程序名称
+        displayname, user_principal_name, user_id = get_principal_name(tenant_id, client_id, client_secret, principal_id)
+        
+        # 获取角色定义
+        role_definition = authorization_client.role_definitions.get(
+            scope=role_assignment.scope,
+            role_definition_id=role_definition_id.split('/')[-1]
+        )
+        
+        # 打印用户、角色和角色的具体内容
+        print(f"Displayname : {displayname}")
+        print(f"User Principal Name: {user_principal_name}")
 
-        #ra.principal_type     = pricniple type (User, Group, ServicePrincipal)
+        #生效范围
+        print(f"Scope: {roleassignment_scope}")
 
-        #ra.name is Role Assignment GUID
-        #c99a2fb0-81ec-495a-8b26-1ce87ab9307a
+        print(f"Role Name: {role_definition.role_name}")
+        print(f"Role Description: {role_definition.description}")
 
-        print(ra.role_definition_id, ra.id, ra.principal_type, ra.name)
+        # 打印角色权限的所有内容
+        print("Role Permissions:")
+        for permission in role_definition.permissions:
+            print(f"  Actions: {permission.actions}")
+            print(f"  NotActions: {permission.not_actions}")
+            print(f"  DataActions: {permission.data_actions}")
+            print(f"  NotDataActions: {permission.not_data_actions}")
+        print("-" * 40)
 
+def main():
+    # 替换为你的服务主体信息
+    tenant_id = os.environ.get('msdn_tenantid')
+    client_id = os.environ.get('msdn_clientid')
+    client_secret = os.environ.get('msdn_clientsecret')
+
+    # 创建服务主体凭据
+    credential = ClientSecretCredential(tenant_id, client_id, client_secret)
+
+    # 创建订阅客户端
+    subscription_client = SubscriptionClient(credential)
+
+    # 获取所有订阅
+    subscriptions = subscription_client.subscriptions.list()
+
+    # 遍历每个订阅
+    for subscription in subscriptions:
+        subscription_id = subscription.subscription_id
+        print(f"Subscription ID: {subscription_id}")
+        
+        # 获取并打印角色分配
+        get_role_assignments(tenant_id,client_id,client_secret, subscription_id)
+
+    print("Completed checking all subscriptions.")
+
+if __name__ == "__main__":
+    main()

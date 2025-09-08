@@ -12,6 +12,8 @@ from azure.mgmt.resourcegraph.models import QueryRequest
 from azure.mgmt.monitor import MonitorManagementClient
 from azure.mgmt.resource import ResourceManagementClient
 
+from azure.kusto.data import KustoClient, KustoConnectionStringBuilder
+
 input_prompt = ""
 
 #在这里描述问题
@@ -34,7 +36,7 @@ def get_vm_resource_graph_byip(tenant_id, client_id, client_secret, private_ip_a
         query = QueryRequest(
             query=f'''Resources
                         | where type =~ 'microsoft.compute/virtualmachines'
-                        | project subscriptionId, vmId = tolower(tostring(id)), vmName = name, resourceGroup = resourceGroup
+                        | project subscriptionId, vmId = tolower(tostring(id)), vmName = name, resourceGroup = resourceGroup, vmUniqueid = properties.vmId
                         | join (Resources
                             | where type =~ 'microsoft.network/networkinterfaces'
                             | mv-expand ipconfig=properties.ipConfigurations
@@ -48,7 +50,7 @@ def get_vm_resource_graph_byip(tenant_id, client_id, client_secret, private_ip_a
                             | project-away publicIpId, publicIpId1
                             | summarize privateIps = make_list(privateIp), publicIps = make_list(publicIp) by vmId
                         ) on vmId
-                        | project  vmId,subscriptionId, vmName, resourceGroup, privateIps, publicIps
+                        | project  vmId,subscriptionId, vmName, vmUniqueid, resourceGroup, privateIps, publicIps
                         | where privateIps contains '{private_ip_address}'
                         | sort by vmName asc ''',
             subscriptions=subscriptions
@@ -64,6 +66,8 @@ def get_vm_resource_graph_byip(tenant_id, client_id, client_secret, private_ip_a
                 query_response.data[0]['vmId'],
                 query_response.data[0]['subscriptionId'],
                 query_response.data[0]['vmName'],
+                #新加的Unique Id
+                query_response.data[0]['vmUniqueid'],
                 query_response.data[0]['resourceGroup'],
                 query_response.data[0]['privateIps']
             )
@@ -83,6 +87,8 @@ def get_vm_resource_graph_byip(tenant_id, client_id, client_secret, private_ip_a
                             result['vmId'],
                             result['subscriptionId'],
                             result['vmName'],
+                            #新加的Unique Id
+                            result['vmUniqueid'],
                             result['resourceGroup'],
                             result['privateIps']
                         )
@@ -326,6 +332,17 @@ def request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time):
     print(f"内容已导出到 {file_name}")
     
 
+def adx_pingtorlower100(cluster, client_id, client_secret, authority_id, vm_uniqueid):
+    # 构建连接字符串
+    kcsb = KustoConnectionStringBuilder.with_aad_application_key_authentication(cluster, client_id, client_secret, authority_id)
+
+    # 创建 Kusto 客户端
+    client = KustoClient(kcsb)
+    # 定义查询
+    query = "['pingtorlower100'] | where virtualMachineUniqueId == '{vm_uniqueid}'"
+
+
+
 
 def request_openai():
     # Initialize the Azure OpenAI client
@@ -370,11 +387,13 @@ def main():
 
 
     private_ip, issue_time = request_openai()
-    vm_id, subscription_id,vm_name, rg_name, private_ip = get_vm_resource_graph_byip(tenant_id, client_id, client_secret, private_ip)
+    #vm_uniqueid 是新加入的
+    vm_id, subscription_id,vm_name, vm_uniqueid, rg_name, private_ip = get_vm_resource_graph_byip(tenant_id, client_id, client_secret, private_ip)
     get_vm_activity_log(tenant_id,client_id,client_secret,subscription_id,rg_name,vm_name,vm_id,issue_time)
     get_vm_resource_health(tenant_id,client_id,client_secret,subscription_id,rg_name,vm_name,vm_id)
     get_vm_monitor_metrics(tenant_id,client_id,client_secret,subscription_id,rg_name,vm_name,vm_id,issue_time)
     request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time)
 
+     
 if __name__ == "__main__":
     main()
