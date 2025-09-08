@@ -7,6 +7,10 @@ from msgraph.generated.applications.applications_request_builder import Applicat
 
 
 def main():
+    #需要提前设置权限
+    #具体参考：    https://learn.microsoft.com/en-us/graph/api/application-list?view=graph-rest-1.0&tabs=http
+
+
     tenantid = os.environ.get('msdn_tenantid')
     clientid = os.environ.get('msdn_clientid')
     clientsecret = os.environ.get('msdn_clientsecret')
