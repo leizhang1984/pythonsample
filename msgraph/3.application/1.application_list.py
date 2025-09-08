@@ -24,9 +24,19 @@ async def main():
     参考: https://learn.microsoft.com/en-us/graph/api/application-list?view=graph-rest-1.0&tabs=http
     检查Permissions
     '''
-    # List All Application
-    apps = await graph_service_client.applications.get()
-    print(apps)
+    # 列出所有的application
+    apps_response = await graph_service_client.applications.get()
+    apps = apps_response.value
+
+    # 循环所有的applications
+    for app in apps:
+        app_id = app.app_id
+        app_display_name = app.display_name
+        print(f"Checking Application: {app_display_name} (ID: {app_id})")
+   
+        one_app = graph_service_client.applications.by_application_id(app_id).get()
+        print(one_app)
+
 
 
 if __name__ == "__main__":

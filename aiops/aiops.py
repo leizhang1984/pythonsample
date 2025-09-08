@@ -239,7 +239,7 @@ def get_vm_monitor_metrics(tenant_id, client_id, client_secret,subscription_id, 
                     beijing_time_str = beijing_time.strftime("%Y-%m-%d %H:%M:%S")
                     # print(f"Maximum: {data.maximum}")
                     global input_prompt
-                    input_prompt += f"在北京时间:{beijing_time_str},发现虚拟机的监控指标:{metric.name.localized_value}, 当时的最大值是:{data.maximum}\n"
+                    input_prompt += f"在北京时间:{beijing_time_str},发现虚拟机的监控指标:{metric.name.localized_value}, 当时的最大值是:{data.maximum} \n"
 
             # if data.count is no
                 # if data.count is not None:
@@ -255,7 +255,7 @@ def request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time):
     )
     # 定义 prompt
     #10.100.208.4
-    default_prompt = f"订阅ID为:{subscription_id}, 资源组名称为:{rg_name}, 虚拟机名称为: {vm_name}, 内网IP地址: {private_ip}, 在问题发生时间: {issue_time}"
+    default_prompt = f"订阅ID为:{subscription_id}, 资源组名称为:{rg_name}, 虚拟机名称为: {vm_name}, 内网IP地址: {private_ip}, 在问题发生时间: {issue_time} \n"
     prompt = default_prompt + input_prompt
 
     # Define the messages for the chat completion

@@ -26,7 +26,7 @@ async def main():
     '''
 
     # Get by Application id (Using Application Object ID)
-    app  = await graph_service_client.applications.by_application_id("135d72ae-dc87-482a-87e6-a275892e16f9").get()
+    app  = await graph_service_client.applications.by_application_id("87d6b931-26ab-4b5b-b7d9-718a90978c4b").get()
     print(app.display_name, app.id)
 
 
