@@ -1,0 +1,142 @@
+### 第1部分，问题描述
+
+- 订阅ID：166157a8-9ce9-400b-91c7-1d42482b83d6
+- 资源组：sig-rg
+- 虚拟机名：stresstestvm01
+- 内网IP：10.99.76.10
+- 问题发生时间：2025-09-09T11:10:00+08:00
+
+---
+
+### 第2部分，关键性能指标
+
+**活动日志Activity Log汇总：**
+
+- 2025-09-09 03:23:31.564288+00:00：Start Virtual Machine，执行状态: Succeeded
+- 2025-09-09 03:23:17.935000+00:00：Health Event Updated，执行状态: Updated
+- 2025-09-09 03:23:16.935000+00:00：Health Event Updated，执行状态: Updated
+- 2025-09-09 03:23:13.761262+00:00：Start Virtual Machine，执行状态: Accepted
+- 2025-09-09 03:23:08.917523+00:00：Start Virtual Machine，执行状态: Started
+
+**Azure Resource Health汇总：**
+
+- 2025-09-09 03:23:17.935000+00:00：The Virtual Machine is starting as requested by an authorized user or process. No other action is required.
+- 2025-09-09 03:23:16.935000+00:00：The Virtual Machine is in the process of being set up, as requested by an authorized user or process. No other action is required.
+- 2025-09-05 16:50:48.465000+00:00：The Virtual Machine is in the process of being stopped and deallocated as requested by an authorized user or process. No other action is required.
+
+**核心监控指标（北京时间）：**  
+（数据区间为10:55~11:45未见，但11:20起可以锁定磁盘压力）
+
+| 时间点          | 指标名称                           | 最大值   |
+|-----------------|------------------------------------|---------|
+| 11:25           | Percentage CPU                     | 16.69   |
+| 11:30           | Percentage CPU                     | 1.65    |
+| 11:35           | Percentage CPU                     | 8.74    |
+| 11:25           | Available Memory Percentage        | 91.0    |
+| 11:30           | Available Memory Percentage        | 91.0    |
+| 11:35           | Available Memory Percentage        | 91.0    |
+| 11:20           | VM Availability Metric (Preview)   | 1.0     |
+| 11:25           | VM Availability Metric (Preview)   | 1.0     |
+| 11:30           | VM Availability Metric (Preview)   | 1.0     |
+| 11:35           | VM Availability Metric (Preview)   | 1.0     |
+
+**OS磁盘指标（主盘）**:
+
+| 时间点          | 指标                             | 最大值 |
+|-----------------|----------------------------------|-------|
+| 11:25           | OS Disk Bandwidth Consumed %     | 2.0   |
+| 11:30           | OS Disk Bandwidth Consumed %     | 0.0   |
+| 11:35           | OS Disk Bandwidth Consumed %     | 0.0   |
+| 11:25           | OS Disk IOPS Consumed %          | 8.0   |
+| 11:30           | OS Disk IOPS Consumed %          | 0.0   |
+| 11:35           | OS Disk IOPS Consumed %          | 1.0   |
+| 11:25           | OS Disk Queue Depth              | 0.82  |
+| 11:30           | OS Disk Queue Depth              | 0.0   |
+| 11:35           | OS Disk Queue Depth              | 0.11  |
+
+**数据盘指标**:
+
+| 时间点          | 指标                              | 最大值 |
+|-----------------|-----------------------------------|-------|
+| 11:25           | Data Disk Bandwidth Consumed %    | 0.0   |
+| 11:30           | Data Disk Bandwidth Consumed %    | 100.0 |
+| 11:35           | Data Disk Bandwidth Consumed %    | 100.0 |
+| 11:25           | Data Disk IOPS Consumed %         | 0.0   |
+| 11:30           | Data Disk IOPS Consumed %         | 31.0  |
+| 11:35           | Data Disk IOPS Consumed %         | 32.0  |
+| 11:25           | Data Disk Queue Depth             | 16.76 |
+| 11:30           | Data Disk Queue Depth             | 127.88|
+| 11:35           | Data Disk Queue Depth             | 127.89|
+
+---
+
+### 第3部分，Azure底层的监控
+
+#### Ping统计
+- 发送ping数量: 300
+- 接收ping数量: 299
+- ping成功率: 99.67%
+- 单一丢包，网络总体健康，无严重丢包或不可达，低概率受网络影响。
+
+#### 底层存储集群和补丁
+- 暂未检测到底层存储集群磁盘事件异常（事件需补充具体内容如有，否则默认为正常）
+- 暂未检测到相关的补丁/磁盘相关平台维护事件
+
+---
+
+### 第4部分，根据目前的性能指标，发现可能存在的性能瓶颈和问题是：
+
+#### 1. 数据盘出现明显性能瓶颈
+- **11:30-11:35区间：Data Disk Bandwidth Consumed Percentage 持续100%，Data Disk IOPS Consumed Percentage超过30%**，说明数据盘部分请求被限流，达到预配上限。
+- **Data Disk Queue Depth 飙升**（127+），远超健康队列长度（通常<1~5），说明请求被严重积压，等待磁盘资源。  
+  这种情况通常只会出现于磁盘已触顶且有进一步负载输入，Azure平台触发了限流，导致延迟和I/O等待猛增。
+
+#### 2. OS盘压力轻微，无瓶颈
+- OS Disk带宽和IOPS百分比都很低，队列正常，无瓶颈存在。
+
+#### 3. CPU/内存/可用性指标均健康
+- CPU利用率最高仅16%。
+- 可用内存91%，无明显swap/压力。
+- 可用性指标始终1.0，未出现平台层面SLA风险。
+
+#### 4. 无网络异常
+- Ping成功率高，无平台层丢包迹象，说明根因非网络。
+
+---
+
+### 第5部分，优化建议
+
+#### 针对数据盘瓶颈：
+1. **短期缓解措施**  
+   - **降低应用并发/减少IO负载**快速缓解积压。如果业务允许可做窗口错峰。
+2. **规格升级**
+   - 升级数据盘类型/规格。例如由Standard SSD升级到Premium SSD, 或提升P大小。
+   - 若使用多盘，可采用磁盘条带化（Storage Spaces/RAID 0），以提升整体带宽和IOPS。
+3. **利用磁盘缓存（Read/Write Cache）**
+   - 检查能否开启写入或读取缓存用于缓冲突发压力（必须评估缓存一致性及应用容错能力）。
+4. **监控突发信用盘类型（如Standard SSD）**
+   - 检查是否对消耗突发信用有依赖。建议转用无突发限制的Premium或Ultra SSD。
+5. **应用端优化**
+   - 优化应用对磁盘的读写模式，减少小块随机IO，合并写入/批量刷新。
+6. **长期监控和告警**
+   - 为Data Disk IOPS/Bandwidth百分比和Queue Depth设置阈值告警（如持续>80%触发预警，>95%紧急预警）。
+7. **审查数据盘分区与文件系统配置**
+   - 合理分配block size/align，提高盘的对齐和效率。
+
+---
+
+### 第6部分，总结
+
+**本次的主要性能问题为：数据盘带宽触顶（Data Disk Bandwidth Consumed % 连续达到100%），导致数据盘IO排队严重（queue depth >127），这是严重的I/O瓶颈，会造成应用延迟增加甚至超时/卡死现象。主因是盘的预配带宽不足以承担此时的业务高峰I/O速率。**
+
+#### 建议的方案：
+- 立即升级数据盘的SKU或大小，提升带宽及IOPS上限；
+- 若业务允许，短期可降负载、限制并发；
+- 优化应用或者采用多盘条带提升带宽；
+- 持续关注相关磁盘指标，预警设置防止同类问题反复发生。
+
+**如已实施并行措施且带宽不再满载，则建议继续监控队列深度和限流指标，做到即将触顶时提前扩容。**
+
+---
+
+【总结：此次案例为典型的Azure数据盘I/O带宽瓶颈，平台资源健康无其它异常。若并未立即优化，极可能反复出现严重延迟，强烈建议务必按优化建议行动，并纳入日常运维巡检。】

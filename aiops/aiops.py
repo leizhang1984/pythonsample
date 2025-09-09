@@ -17,7 +17,7 @@ from azure.kusto.data import KustoClient, KustoConnectionStringBuilder
 input_prompt = ""
 
 #在这里描述问题
-default_prompt = "请帮我找内网为10.99.76.10这台虚拟机,在北京时间2025年9月2日下午3点10分有没有问题。"
+default_prompt = "请帮我找内网为10.99.76.10这台虚拟机,在北京时间2025年9月9日上午11点10分有没有问题。"
 
 # 通过内网ip，获得虚拟机的资源id，资源组和虚拟机名称
 def get_vm_resource_graph_byip(tenant_id, client_id, client_secret, private_ip_address):
@@ -98,7 +98,10 @@ def get_vm_resource_graph_byip(tenant_id, client_id, client_secret, private_ip_a
                     print("输入的不是有效的数字，请重新选择")
 
 #获得VM的活动日志
-def get_vm_activity_log(tenant_id, client_id, client_secret,subscription_id, rg_name, vm_name, vm_id, issue_time_str):
+def get_vm_activity_log(tenant_id, client_id, client_secret,subscription_id, rg_name, vm_name, vm_id, issue_time_iso8601):
+    # issue_time_iso8601
+    #'2025-09-02T15:10:00+08:00'
+
     # 使用ClientSecretCredential进行身份验证
     credential = ClientSecretCredential(tenant_id, client_id, client_secret)
 
@@ -109,7 +112,7 @@ def get_vm_activity_log(tenant_id, client_id, client_secret,subscription_id, rg_
     resource_client = ResourceManagementClient(credential, subscription_id)
 
     # 解析带有时区信息的字符串为 datetime 对象
-    issue_time = datetime.fromisoformat(issue_time_str)
+    issue_time = datetime.fromisoformat(issue_time_iso8601)
 
     # 计算前30分钟
     start_time = issue_time - timedelta(minutes=30)
@@ -302,10 +305,20 @@ def request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time):
                 "发现虚拟机的监控指标： \n"
                 "这里详细描述问题发生的前30分钟到后30分钟，每一个Azure性能指标，包含时间，指标名称，最大值，可以支持多行数据 \n"
                 "如果是一个新的指标值，请单独插入一个空行 \n"
+                 
+                "第3部分, Azure底层的监控, 发现虚拟机所在物理机ping的数据, 发送ping数量为: XXXX, 接受ping数量为: XXXX, ping成功率为: xx.xx% \n"
+                "这里详细描述ping的数据 \n"
 
-                "第3部分.根据目前的性能指标，发现可能存在的性能瓶颈和问题是： \n"
-                "第4部分.优化建议是 \n"
-                "第5部分.结论是在这个时间段内有发现性能问题，主要问题是:xxxxx，建议的方案是。或者没有发现性能问题xxxx \n"
+                "通过Azure底层的存储集群, 发现磁盘事件: XXXXX, RCAType: XXXXXXX,  RCALevel1: XXXXXXXX \n"
+                
+                "通过Azure底层的补丁更新, 发现虚拟机磁盘事件: XXXXX  \n"
+                
+
+                "第4部分,根据目前的性能指标，发现可能存在的性能瓶颈和问题是： \n"
+
+                "第5部分,优化建议是 \n"
+
+                "第6部分,如果在这个时间段内有发现性能问题，主要问题是:xxxxx，建议的方案是。如果没有发现性能问题，则建议持续观察 \n"
             )
         },
         {"role": "user", "content": f"{prompt}"}
@@ -332,14 +345,123 @@ def request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time):
     print(f"内容已导出到 {file_name}")
     
 
-def adx_pingtorlower100(cluster, client_id, client_secret, authority_id, vm_uniqueid):
-    # 构建连接字符串
-    kcsb = KustoConnectionStringBuilder.with_aad_application_key_authentication(cluster, client_id, client_secret, authority_id)
+#ping tor
+def adx_pingtorlower100(tenant_id, client_id, client_secret, adx_cluster_url, adx_cluster_database, vm_uniqueid, issue_time_utc):
+    # 解析时间字符串为 datetime 对象
+    initial_time = datetime.strptime(issue_time_utc, '%Y/%m/%d %H:%M:%S.%f')
+    # 往前30分钟
+    issue_time_start = initial_time - timedelta(minutes=30)
+    # 往后30分钟
+    issue_time_end = initial_time + timedelta(minutes=30)
 
-    # 创建 Kusto 客户端
-    client = KustoClient(kcsb)
-    # 定义查询
-    query = "['pingtorlower100'] | where virtualMachineUniqueId == '{vm_uniqueid}'"
+    # 使用Service Principal认证
+    credential = ClientSecretCredential(tenant_id, client_id, client_secret)
+
+    # 构建Kusto连接字符串
+    kcsb = KustoConnectionStringBuilder.with_aad_application_key_authentication(adx_cluster_url, client_id, client_secret, tenant_id)
+
+    # 创建Kusto客户端
+    adx_client = KustoClient(kcsb)
+
+    # 构建查询语句
+    query = f"""
+    let starttime = datetime('{issue_time_start}');
+    let endtime = datetime('{issue_time_end}');
+
+    pingtorlower100 
+    | extend chinatime = datetime_utc_to_local(todatetime(TIMESTAMP),'Asia/Shanghai')
+    | where TIMESTAMP between (starttime .. endtime) 
+    | where virtualMachineUniqueId == '{vm_uniqueid}'
+    | distinct TIMESTAMP,chinatime, RegionFriendlyName, subscriptionId, Cluster, nodeId, vmname, virtualMachineUniqueId,Availability, SendCount, RecvCount, TimeWindowInMinutes
+    """
+
+    # 执行查询
+    response = adx_client.execute(adx_cluster_database, query)
+
+    # 遍历每一行结果
+    for record in response.primary_results[0]:
+        global input_prompt
+        input_prompt += f"在北京时间:{record['chinatime']}, 通过Azure底层的监控, 发现虚拟机所在物理机ping的数据, 发送ping数量为: {record['SendCount']}, 接受ping数量为: {record['RecvCount']}, ping成功率为: {record['Availability']} \n"
+
+
+#磁盘抖动
+def adx_diskioblip(tenant_id, client_id, client_secret, adx_cluster_url, adx_cluster_database, vm_uniqueid, issue_time_utc):
+     # 解析时间字符串为 datetime 对象
+    initial_time = datetime.strptime(issue_time_utc, '%Y/%m/%d %H:%M:%S.%f')
+    # 往前30分钟
+    issue_time_start = initial_time - timedelta(minutes=30)
+    # 往后30分钟
+    issue_time_end = initial_time + timedelta(minutes=30)
+
+    # 使用Service Principal认证
+    credential = ClientSecretCredential(tenant_id, client_id, client_secret)
+
+    # 构建Kusto连接字符串
+    kcsb = KustoConnectionStringBuilder.with_aad_application_key_authentication(adx_cluster_url, client_id, client_secret, tenant_id)
+
+    # 创建Kusto客户端
+    adx_client = KustoClient(kcsb)
+
+    # 构建查询语句
+    query = f"""
+    let starttime = datetime('{issue_time_start}');
+    let endtime = datetime('{issue_time_end}');
+
+    diskioblip 
+    | extend chinatime = datetime_utc_to_local(todatetime(EventTime),'Asia/Shanghai')
+    | where EventTime between (starttime .. endtime) 
+    | where VirtualMachineUniqueId == '{vm_uniqueid}'
+    | distinct EventTime,chinatime, EventType, RCAType, RCALevel1,RCALevel2,RCALevel3, SubscriptionId,Cluster, NodeId,ContainerId, VirtualMachineUniqueId, DiskType, DiskTier, DiskSize, DiskPath, BlobPath, StorageAccount, StorageCluster
+    """
+
+    # 执行查询
+    response = adx_client.execute(adx_cluster_database, query)
+
+    # 遍历每一行结果
+    for record in response.primary_results[0]:
+        global input_prompt
+        input_prompt += f"在北京时间:{record['chinatime']}, 通过Azure底层的存储集群, 发现磁盘事件: {record['EventType']}, RCAType: {record['RCAType']},  RCALevel1: {record['RCALevel1']} \n"
+
+
+
+# 系统底层运维
+def adx_AirManagedEvents(tenant_id, client_id, client_secret, adx_cluster_url, adx_cluster_database, vm_uniqueid, issue_time_utc):
+     # 解析时间字符串为 datetime 对象
+    initial_time = datetime.strptime(issue_time_utc, '%Y/%m/%d %H:%M:%S.%f')
+    # 往前30分钟
+    issue_time_start = initial_time - timedelta(minutes=30)
+    # 往后30分钟
+    issue_time_end = initial_time + timedelta(minutes=30)
+
+    # 使用Service Principal认证
+    credential = ClientSecretCredential(tenant_id, client_id, client_secret)
+
+    # 构建Kusto连接字符串
+    kcsb = KustoConnectionStringBuilder.with_aad_application_key_authentication(adx_cluster_url, client_id, client_secret, tenant_id)
+
+    # 创建Kusto客户端
+    adx_client = KustoClient(kcsb)
+
+    # 构建查询语句
+    query = f"""
+    let starttime = datetime('{issue_time_start}');
+    let endtime = datetime('{issue_time_end}');
+
+    airmanagedevents 
+    | extend chinatime = datetime_utc_to_local(todatetime(EventDate),'Asia/Shanghai')
+    | where EventDate between (starttime .. endtime) 
+    | where VirtualMachineUniqueId == '{vm_uniqueid}'
+    | distinct EventDate, EventType, RegionFriendlyName,  Cluster, VirtualMachineUniqueId,rolename ,RoleInstanceName, NodeId, Duration, RCALevel1, RCALevel2, RCALevel3, TenantName,ingestTime,diff    
+    """
+
+    # 执行查询
+    response = adx_client.execute(adx_cluster_database, query)
+
+    # 遍历每一行结果
+    for record in response.primary_results[0]:
+        global input_prompt
+        input_prompt += f"在北京时间:{record['chinatime']}, 通过Azure底层的补丁更新, 发现虚拟机磁盘事件: {record['EventType']} \n"
+
 
 
 
@@ -354,7 +476,9 @@ def request_openai():
     # 定义 prompt
     #10.100.208.4
     global default_prompt
-    prompt = default_prompt + "需要帮我把这句话提取关键信息，把内网ip并返回在<privateip></privateip>，请把时间转换为北京时间， 符合ISO 8601 标准,并返回在<issuetime></issuetime>"
+    prompt = default_prompt + "需要帮我把这句话提取关键信息, 把内网ip并返回在<privateip></privateip>，请把时间转换为北京时间， 符合ISO 8601 标准,并返回在<issuetime></issuetime> "
+    prompt += "再把时间转换为UTC时区, 格式为%Y/%m/%d %H:%M:%S.%f,并返回在<issuetimeutc></issuetimeutc> "
+
 
     # Define the messages for the chat completion
     # This structure mirrors the roles used in the Chat Playground
@@ -375,9 +499,11 @@ def request_openai():
     private_ip = re.search(r'<privateip>(.*?)</privateip>', response_content).group(1)
     #print(f"{private_ip}")
     issue_time = re.search(r'<issuetime>(.*?)</issuetime>', response_content).group(1)
+
+    issue_time_utc = re.search(r'<issuetimeutc>(.*?)</issuetimeutc>', response_content).group(1)
     #print(f"{issue_time}")
 
-    return private_ip, issue_time
+    return private_ip, issue_time, issue_time_utc
 
 def main():
      # 替换为你的Service Principal信息
@@ -386,14 +512,21 @@ def main():
     client_secret = os.environ.get('nonprod_clientsecret')
 
 
-    private_ip, issue_time = request_openai()
+    private_ip, issue_time, issue_time_utc = request_openai()
     #vm_uniqueid 是新加入的
     vm_id, subscription_id,vm_name, vm_uniqueid, rg_name, private_ip = get_vm_resource_graph_byip(tenant_id, client_id, client_secret, private_ip)
     get_vm_activity_log(tenant_id,client_id,client_secret,subscription_id,rg_name,vm_name,vm_id,issue_time)
     get_vm_resource_health(tenant_id,client_id,client_secret,subscription_id,rg_name,vm_name,vm_id)
     get_vm_monitor_metrics(tenant_id,client_id,client_secret,subscription_id,rg_name,vm_name,vm_id,issue_time)
+
+    #底层数据
+    adx_pingtorlower100(tenant_id, client_id, client_secret, "https://jt-grafana-adx.germanywestcentral.kusto.windows.net", "grafana", vm_uniqueid, issue_time_utc)
+    adx_diskioblip(tenant_id, client_id, client_secret, "https://jt-grafana-adx.germanywestcentral.kusto.windows.net", "grafana", vm_uniqueid, issue_time_utc)
+    adx_AirManagedEvents(tenant_id, client_id, client_secret, "https://jt-grafana-adx.germanywestcentral.kusto.windows.net", "grafana", vm_uniqueid, issue_time_utc)
+
     request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time)
 
+    
      
 if __name__ == "__main__":
     main()
