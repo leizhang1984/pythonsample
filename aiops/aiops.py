@@ -377,11 +377,14 @@ def adx_pingtorlower100(tenant_id, client_id, client_secret, adx_cluster_url, ad
 
     # 执行查询
     response = adx_client.execute(adx_cluster_database, query)
+    global input_prompt
+    if len(response.primary_results[0]) == 0:
 
-    # 遍历每一行结果
-    for record in response.primary_results[0]:
-        global input_prompt
-        input_prompt += f"在北京时间:{record['chinatime']}, 通过Azure底层的监控, 发现虚拟机所在物理机ping的数据, 发送ping数量为: {record['SendCount']}, 接受ping数量为: {record['RecvCount']}, ping成功率为: {record['Availability']} \n"
+        input_prompt += "在指定时间范围内，没有发现ping丢包的数据。\n"
+    else:
+        # 遍历每一行结果
+        for record in response.primary_results[0]:
+            input_prompt += f"在北京时间:{record['chinatime']}, 通过Azure底层的监控, 发现虚拟机所在物理机ping的数据, 发送ping数量为: {record['SendCount']}, 接受ping数量为: {record['RecvCount']}, ping成功率为: {record['Availability']} \n"
 
 
 #磁盘抖动
@@ -416,11 +419,15 @@ def adx_diskioblip(tenant_id, client_id, client_secret, adx_cluster_url, adx_clu
 
     # 执行查询
     response = adx_client.execute(adx_cluster_database, query)
+    
+    global input_prompt
 
-    # 遍历每一行结果
-    for record in response.primary_results[0]:
-        global input_prompt
-        input_prompt += f"在北京时间:{record['chinatime']}, 通过Azure底层的存储集群, 发现磁盘事件: {record['EventType']}, RCAType: {record['RCAType']},  RCALevel1: {record['RCALevel1']} \n"
+    if len(response.primary_results[0]) == 0:
+        input_prompt += "在指定时间范围内，没有发现磁盘抖动的事件。\n"
+    else:
+        # 遍历每一行结果
+        for record in response.primary_results[0]:
+            input_prompt += f"在北京时间:{record['chinatime']}, 通过Azure底层的存储集群, 发现磁盘事件: {record['EventType']}, RCAType: {record['RCAType']},  RCALevel1: {record['RCALevel1']} \n"
 
 
 
@@ -456,11 +463,14 @@ def adx_AirManagedEvents(tenant_id, client_id, client_secret, adx_cluster_url, a
 
     # 执行查询
     response = adx_client.execute(adx_cluster_database, query)
-
-    # 遍历每一行结果
-    for record in response.primary_results[0]:
-        global input_prompt
-        input_prompt += f"在北京时间:{record['chinatime']}, 通过Azure底层的补丁更新, 发现虚拟机磁盘事件: {record['EventType']} \n"
+    
+    global input_prompt
+    if len(response.primary_results[0]) == 0:
+        input_prompt += "在指定时间范围内，没有发现虚拟机底层有补丁更新事件。\n"
+    else:
+        # 遍历每一行结果
+        for record in response.primary_results[0]:
+            input_prompt += f"在北京时间:{record['chinatime']}, 通过Azure底层的补丁更新, 发现虚拟机补丁更新事件: {record['EventType']} \n"
 
 
 
