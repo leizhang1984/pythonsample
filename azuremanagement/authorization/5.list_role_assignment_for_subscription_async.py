@@ -7,12 +7,25 @@ from azure.mgmt.resource import SubscriptionClient
 
 async def get_principal_info(principal_type, principal):
     if principal_type == "User":
+        # 尝试获取用户信息
+        # 用户就是 类似 leizha@jt.com
+
+        # 需要额外申请权限：https://learn.microsoft.com/en-us/graph/api/user-get?view=graph-rest-1.0&tabs=http
         return principal.display_name, principal.user_principal_name, principal.id
+    
     elif principal_type == "Group":
+        # 尝试获取用户组信息
+        #需要额外申请用户组的权限：https://learn.microsoft.com/en-us/graph/api/group-get?view=graph-rest-1.0&tabs=http
         return principal.display_name, "None", principal.id
+    
     elif principal_type == "Application":
+        # 尝试获取应用程序信息
+        # 需要额外申请Application的权限：https://learn.microsoft.com/en-us/graph/api/application-get?view=graph-rest-1.0&tabs=http
         return principal.display_name, "None", principal.id
+    
     elif principal_type == "ServicePrincipal":
+        # 尝试获取Service Principal
+        # 需要额外申请Service Principal的权限：https://learn.microsoft.com/en-us/graph/api/serviceprincipal-get?view=graph-rest-1.0&tabs=http
         return principal.display_name, "None", principal.id
 
 async def async_for(subscriptions, client_credential, graph_service_client):
@@ -66,6 +79,7 @@ async def async_for(subscriptions, client_credential, graph_service_client):
 
             except Exception as e:
                 print(f"Error retrieving {role_assignment.principal_type}: {e}")
+                print("-" * 40)
 
 def main():
     # 获取环境变量中的凭据
