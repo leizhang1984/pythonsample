@@ -29,6 +29,9 @@ def get_principal_name(tenant_id,client_id,client_secret, principal_id):
 
      # 尝试获取用户信息
      # 用户就是 类似 leizha@jt.com
+
+     # 需要额外申请权限：https://learn.microsoft.com/en-us/graph/api/user-get?view=graph-rest-1.0&tabs=http
+
     user_url = f"https://graph.microsoft.com/v1.0/users/{principal_id}"
     response = requests.get(user_url, headers=headers)
     if response.status_code == 200:
@@ -36,6 +39,8 @@ def get_principal_name(tenant_id,client_id,client_secret, principal_id):
         return user_data['displayName'], user_data['userPrincipalName'], user_data['id']
 
     # 尝试获取用户组信息
+
+    #需要额外申请用户组的权限：https://learn.microsoft.com/en-us/graph/api/group-get?view=graph-rest-1.0&tabs=http
     group_url = f"https://graph.microsoft.com/v1.0/groups/{principal_id}"
     response = requests.get(group_url, headers=headers)
     if response.status_code == 200:
@@ -43,6 +48,8 @@ def get_principal_name(tenant_id,client_id,client_secret, principal_id):
         return group_data['displayName'], None, group_data['id']
 
     # 尝试获取应用程序信息
+
+    # 需要额外申请Application的权限：https://learn.microsoft.com/en-us/graph/api/application-get?view=graph-rest-1.0&tabs=http
     app_url = f"https://graph.microsoft.com/v1.0/applications/{principal_id}"
     response = requests.get(app_url, headers=headers)
     if response.status_code == 200:
@@ -50,6 +57,8 @@ def get_principal_name(tenant_id,client_id,client_secret, principal_id):
         return app_data['displayName'], None, app_data['id']
     
     # 尝试获取Service Principal
+
+    # 需要额外申请Service Principal的权限：https://learn.microsoft.com/en-us/graph/api/serviceprincipal-get?view=graph-rest-1.0&tabs=http
     app_url = f"https://graph.microsoft.com/v1.0/servicePrincipals/{principal_id}"
     response = requests.get(app_url, headers=headers)
     if response.status_code == 200:
