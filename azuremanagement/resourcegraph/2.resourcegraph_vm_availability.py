@@ -28,7 +28,6 @@ def main():
             | where type =~ 'microsoft.resources/changes' 
             | where properties.targetResourceType =~ 'microsoft.resourcehealth/resourceannotations' 
             | extend Timestamp = todatetime(properties.changeAttributes.timestamp) 
-            | where Timestamp > ago(1d) 
             | extend ResourceId = split(properties.targetResourceId, '/providers/Microsoft.ResourceHealth/resourceAnnotations/current')[0] 
             | where ResourceId !contains 'virtualMachineScaleSets'
             | extend Sub = split(ResourceId, '/')[2] | extend RG = split(ResourceId, '/')[4] 
