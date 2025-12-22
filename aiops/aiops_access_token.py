@@ -3,6 +3,7 @@ import re
 from datetime import datetime, timedelta
 import pytz
 from openai import AzureOpenAI
+from azure.core.credentials import AccessToken, TokenCredential
 from azure.identity import ClientSecretCredential
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.resourcehealth import ResourceHealthMgmtClient
@@ -17,7 +18,20 @@ from azure.kusto.data import KustoClient, KustoConnectionStringBuilder
 input_prompt = ""
 
 #在这里描述问题
-default_prompt = "请帮我找内网为10.99.76.10这台虚拟机,在北京时间2025年12月22日下午1点50分有没有问题。"
+default_prompt = "请帮我找内网为10.92.0.73这台虚拟机,在北京时间2025年12月21日上午3点33分有没有问题。"
+
+class MyTokenCredential(TokenCredential):
+    def __init__(self, token):
+        self._token = token
+    
+    def get_token(self, *scopes, **kwargs):
+        return AccessToken(self._token, expires_on=int((datetime.utcnow() + timedelta(hours=1)).timestamp()))
+
+# 假设你已经有一个access_token
+access_token = ""
+
+# 创建自定义的TokenCredential
+clientcredential = MyTokenCredential(access_token)
 
 # 通过内网ip，获得虚拟机的资源id，资源组和虚拟机名称
 def get_vm_resource_graph_byip(clientcredential, private_ip_address):
@@ -510,14 +524,14 @@ def request_openai():
 
 def main():
      # 替换为你的Service Principal信息
-    tenant_id = os.environ.get('nonprod_tenantid')
-    client_id = os.environ.get('nonprod_clientid')
-    client_secret = os.environ.get('nonprod_clientsecret')
+    # tenant_id = os.environ.get('nonprod_tenantid')
+    # client_id = os.environ.get('nonprod_clientid')
+    # client_secret = 'Faf8Q~Lzg2gc.O0g3JJuZWPalRIe2MEn473Lldul' #os.environ.get('nonprod_clientsecret')
 
 
     private_ip, issue_time, issue_time_utc = request_openai()
     #vm_uniqueid 是新加入的
-    clientcredential = ClientSecretCredential(tenant_id, client_id, client_secret)
+    # clientcredential = ClientSecretCredential(tenant_id, client_id, client_secret)
 
     vm_id, subscription_id,vm_name, vm_uniqueid, rg_name, private_ip = get_vm_resource_graph_byip(clientcredential, private_ip)
     get_vm_activity_log(clientcredential,subscription_id,rg_name,vm_name,vm_id,issue_time)
