@@ -7,7 +7,6 @@ from dateutil.relativedelta import relativedelta
 
 def main():
     # 替换为你的 Azure AD 租户 ID、客户端 ID 和客户端密钥
-    # 需要增加权限：Cost Management Reader
     tenant_id = os.environ.get('nonprod_tenantid')
     client_id = os.environ.get('nonprod_clientid')
     client_secret = os.environ.get('nonprod_clientsecret')
@@ -21,6 +20,7 @@ def main():
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json'
     }
+
 
     # 获取所有订阅
     subscriptions_url = 'https://management.azure.com/subscriptions?api-version=2020-01-01'
@@ -52,61 +52,58 @@ def main():
         url = f'https://management.azure.com/subscriptions/{subscription_id}/providers/Microsoft.CostManagement/query?api-version=2025-03-01'
         
         # 构建请求体
+        # type支持三种类型：
+        # 1.Usage，表示用量
+        # 2.ActualCost，表示实际费用
+        # 3.AmortizedCost，表示分摊费用
         body = {
-            # type支持三种类型：
-            # 1.Usage，表示用量
-            # 2.ActualCost，表示实际费用
-            # 3.AmortizedCost，表示分摊费用
-            
-            "type": "Usage",
-            "timeframe": "Custom",
-            "timePeriod": {
+            'type': 'AmortizedCost',
+            'dataSet': {
+                'granularity': 'Monthly',
+                'aggregation': {
+                    'totalCost': {
+                        'name': 'Cost',
+                        'function': 'Sum'
+                    }
+                },
+                'grouping': [
+                    {'type': 'Dimension', 'name': 'ResourceId'},
+                    {'type': 'Dimension', 'name': 'ServiceName'},
+                    {'type': 'Dimension', 'name': 'SubscriptionName'}
+                ]
+            },
+            'timeframe': 'Custom',
+            'timePeriod': {
                 "from": start_date,
                 "to": end_date
-            },
-            "dataset": {
-                "granularity": "Monthly",
-                "aggregation": {
-                    "totalCost": {
-                        "name": "Cost",
-                        "function": "Sum"
-                    }
-                }
             }
         }
-        
-        # 发送请求
-        response = requests.post(url, headers=headers, data=json.dumps(body))
-        
-        # 检查响应状态码
-        if response.status_code == 200:
-            data = response.json()
-            total_cost = data['properties']['rows'][0][0] if data['properties']['rows'] else 0
-            cost_by_subscription.append({
-                'subscriptionName': subscription_name,
-                'subscriptionId': subscription_id,
-                'timefrom': start_date,
-                'timeto': end_date,
-                'totalCost': total_cost
-            })
-        else:
-            print(f"Failed to retrieve cost data for subscription: {subscription_name}")
-            print("Status Code:", response.status_code)
-            print("Response:", response.json())
 
-    # 输出结果
-    print(json.dumps(cost_by_subscription, indent=4))
+        # 发送请求并处理分页
+        all_data = []
+
+        while url:
+            response = requests.post(url, headers=headers, data=json.dumps(body))
+            
+            # 检查响应状态码
+            if response.status_code == 200:
+                data = response.json()
+                all_data.extend(data.get('properties', {}).get('rows', []))
+                
+                # 检查是否有下一页
+                url = data.get('properties', {}).get('nextLink', None)
+            else:
+                print(f"Failed to retrieve cost data. Status Code: {response.status_code}")
+                print("Response:", response.json())
+                break
+        
+        # 将结果写入 JSON 文件
+        with open(f'query_subscription_amortized_paging_{subscription_name}.json', 'w') as json_file:
+            json.dump(all_data, json_file, indent=4)
+            print(f"Results have been written to query_subscription_amortized_paging_{subscription_name}.json")
+
+
+   
 
 if __name__ == "__main__":
     main()
-
-'''
-返回结果
-[
-    {
-        "subscriptionName": "leizhang-non-prod",
-        "subscriptionId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-        "totalCost": 3371.97767768772
-    }
-]
-'''

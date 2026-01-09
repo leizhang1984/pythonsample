@@ -6,6 +6,18 @@ from datetime import datetime, timedelta
 from azure.identity import ClientSecretCredential
 from dateutil.relativedelta import relativedelta
 
+def download_blob(blob_link, download_path):
+    response = requests.get(blob_link, stream=True)
+    if response.status_code == 200:
+        with open(download_path, 'wb') as file:
+            for chunk in response.iter_content(chunk_size=8192):
+                file.write(chunk)
+        print(f"Downloaded blob to {download_path}")
+    else:
+        print(f"Failed to download blob from {blob_link}")
+        print("Status Code:", response.status_code)
+
+
 def main():
     # 替换为你的 Azure AD 租户 ID、客户端 ID 和客户端密钥
     tenant_id = os.environ.get('nonprod_tenantid')
@@ -78,8 +90,9 @@ def main():
                     print(f"Subscription Name: {subscription_name}")
                     print(f"Subscription ID: {subscription_id}")
                     print(f"Blob Link: {blob_link}")
-                    # 后续需要把blob_link下载到本地，然后打开link里的文件进行处理
-                    # 步骤略
+                    # 下载 blob_link 到本地
+                    download_path = f"{subscription_name}_{year}_{month}.csv"
+                    download_blob(blob_link, download_path)
 
                     break
                 elif poll_response.status_code == 202:

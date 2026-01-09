@@ -53,7 +53,12 @@ def main():
         
         # 构建请求体
         body = {
-            "type": "Usage",
+            # type支持三种类型：
+            # 1.Usage，表示用量
+            # 2.ActualCost，表示实际费用
+            # 3.AmortizedCost，表示分摊费用
+            
+            "type": "Usage",  
             "timeframe": "Custom",
             "timePeriod": {
                 "from": start_date,
@@ -71,6 +76,10 @@ def main():
                     {
                         "type": "Dimension",
                         "name": "meterCategory"
+                    },
+                    {
+                        "type": "Dimension",
+                        "name": "ResourceId"
                     }
                 ]
             }
@@ -104,157 +113,9 @@ def main():
             print("Status Code:", response.status_code)
             print("Response:", response.json())
 
-    # 输出结果
-    print(json.dumps(cost_by_subscription, indent=4))
+    # 将结果保存到本地 JSON 文件
+    with open('cost_by_subscription.json', 'w') as json_file:
+        json.dump(cost_by_subscription, json_file, indent=4)
 
 if __name__ == "__main__":
     main()
-
-'''
-返回结果
-{
-    "leizhang-non-prod": {
-        "subscriptionId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-        "costDetails": [
-            {
-                "Cost": 0.793032761290323,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Azure DNS",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 0.0,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Azure Data Explorer",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 0.00024,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Azure Data Factory v2",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 32.7552586,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Azure Database for MySQL",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 900.0,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Azure Firewall",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 4e-05,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Azure Monitor",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 0.579534696517527,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Bandwidth",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 3.46706,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Cognitive Services",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 39.996319968,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Container Registry",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 0.005817,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Event Grid",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 45.645166796,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Event Hubs",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 0.0,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Insight and Analytics",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 0.00081,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Key Vault",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 126.397281385394,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Load Balancer",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 0.00126762246,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Log Analytics",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 1.20456508092871,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Logic Apps",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 284.399628113055,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Microsoft Defender for Cloud",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 0.001121,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Service Bus",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 1008.2235616943,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Storage",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 0.0,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Virtual Machine Licenses",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 404.407420192,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Virtual Machines",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 344.099552777778,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Virtual Network",
-                "Currency": "USD"
-            },
-            {
-                "Cost": 180.0,
-                "BillingMonth": "2025-06-01T00:00:00",
-                "meterCategory": "Virtual WAN",
-                "Currency": "USD"
-            }
-        ]
-    }
-}
-'''
