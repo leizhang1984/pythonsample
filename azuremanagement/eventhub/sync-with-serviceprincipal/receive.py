@@ -7,12 +7,12 @@ from azure.identity.aio import ClientSecretCredential
 
 # Event Hub 配置
 eventhub_namespace = "azuremonitorns.servicebus.windows.net"  # os.getenv("EVENT_HUB_NAMESPACE")
-eventhub_name = "administrative"  # os.getenv("EVENT_HUB_NAME")
+eventhub_name = "resourcemanagement"  # os.getenv("EVENT_HUB_NAME")
 consumer_group = "pythonclient"  # 需要提前创建好：consumer_group
 
 # Blob 存储配置
 blob_storage_account_url = 'azuremonitorns01.blob.core.windows.net'  #os.getenv('BLOB_STORAGE_ACCOUNT_URL')
-blob_container_name = 'administrative' #os.getenv('BLOB_CONTAINER_NAME')
+blob_container_name = 'resourcemanagement' #os.getenv('BLOB_CONTAINER_NAME')
 
 # 服务主体（Service Principal）配置
 tenantid = os.environ.get('nonprod_tenantid')
