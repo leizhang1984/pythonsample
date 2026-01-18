@@ -21,33 +21,33 @@ resources = [
         {
             "subscription_id": "166157a8-9ce9-400b-91c7-1d42482b83d6",
             "operation_name": "Microsoft.Compute/virtualMachines/write",
-            "resource_url": "/subscriptions/166157a8-9ce9-400b-91c7-1d42482b83d6/resourceGroups/lun-rg/providers/Microsoft.Compute/virtualMachines/centos-lun"
+            "resource_id": "/subscriptions/166157a8-9ce9-400b-91c7-1d42482b83d6/resourceGroups/lun-rg/providers/Microsoft.Compute/virtualMachines/centos-lun"
         },
         {
             "subscription_id": "166157a8-9ce9-400b-91c7-1d42482b83d6",
             "operation_name": "Microsoft.Storage/storageAccounts/write",
-            "resource_url": "/subscriptions/166157a8-9ce9-400b-91c7-1d42482b83d6/resourceGroups/lab-rg/providers/Microsoft.Storage/storageAccounts/azuremonitorns01"
+            "resource_id": "/subscriptions/166157a8-9ce9-400b-91c7-1d42482b83d6/resourceGroups/lab-rg/providers/Microsoft.Storage/storageAccounts/azuremonitorns01"
         }
     ],
     [
         {
             "subscription_id": "166157a8-9ce9-400b-91c7-1d42482b83d6",
             "operation_name": "Microsoft.Network/virtualNetworks/subnets/write",
-            "resource_url": "/subscriptions/166157a8-9ce9-400b-91c7-1d42482b83d6/resourceGroups/vwan-rg/providers/Microsoft.Network/virtualNetworks/westus3-prod-vnet01/subnets/default"
+            "resource_id": "/subscriptions/166157a8-9ce9-400b-91c7-1d42482b83d6/resourceGroups/vwan-rg/providers/Microsoft.Network/virtualNetworks/westus3-prod-vnet01/subnets/default"
         }
     ],
     [
         {
             "subscription_id": "166157a8-9ce9-400b-91c7-1d42482b83d6",
             "operation_name": "Microsoft.Network/virtualNetworks/write",
-            "resource_url": "/subscriptions/166157a8-9ce9-400b-91c7-1d42482b83d6/resourceGroups/vwan-rg/providers/Microsoft.Network/virtualNetworks/westus3-prod-vnet01"
+            "resource_id": "/subscriptions/166157a8-9ce9-400b-91c7-1d42482b83d6/resourceGroups/vwan-rg/providers/Microsoft.Network/virtualNetworks/westus3-prod-vnet01"
         }
     ],
     [
         {
             "subscription_id": "166157a8-9ce9-400b-91c7-1d42482b83d6",
-            "operation_name": "Microsoft.Network/networkSecurityGroups/write",
-            "resource_url": "/subscriptions/166157a8-9ce9-400b-91c7-1d42482b83d6/resourceGroups/vwan-rg/providers/Microsoft.Network/networkSecurityGroups/westus3-stg-vnet01-private-vm-subnet-nsg-westus3"
+            "operation_name": "Microsoft.Compute/disks/write",
+            "resource_id": "/subscriptions/166157a8-9ce9-400b-91c7-1d42482b83d6/resourcegroups/fw-hybrid-test/providers/Microsoft.Compute/disks/myNewDataDisk"
         }
     ]
 ]
@@ -91,6 +91,8 @@ def get_resource(credential, subscription_id, operation_name, resource_id):
         get_vnet(credential, subscription_id, resource_id)
     elif "Microsoft.Network/networkSecurityGroups" in operation_name:
         get_nsg(credential, subscription_id, resource_id)
+    elif "Microsoft.Compute/disks" in operation_name:
+        get_disk(credential, subscription_id, resource_id)
     # 你可以根据需要添加更多的条件判断
 
 # 处理虚拟机资源
@@ -132,6 +134,28 @@ def get_storage(credential, subscription_id, resource_id):
     print(f"Storage Account Access Tier: {storage_account.access_tier}")
     print(f"Storage Account Location: {storage_account.location}")
     print(f"Storage Account Public Network Access: {storage_account.public_network_access}")
+
+#处理虚拟机磁盘
+def get_disk(credential, subscription_id, resource_id):
+    print("******************************************************")
+    print("******************************************************")
+    print("Get the Disk")
+
+    resource_parts = resource_id.split('/')
+    resource_group = resource_parts[4]
+    disk_name = resource_parts[8]
+
+    compute_client = ComputeManagementClient(credential, subscription_id)
+    disk = compute_client.disks.get(resource_group, disk_name)
+    print(f"Disk Name: {disk.name}")
+    print(f"Disk Location: {disk.location}")
+    print(f"Disk Size (GB): {disk.disk_size_gb}")
+    print(f"Disk SKU: {disk.sku.name}")
+    print(f"Disk IOPS: {disk.disk_iops_read_write}")
+    print(f"Disk Throughput: {disk.disk_m_bps_read_write}")
+    print(f"Disk State: {disk.disk_state}")
+    print(f"Disk Provisioning State: {disk.provisioning_state}")
+
 
 # 处理虚拟网络资源
 def get_vnet(credential, subscription_id, resource_id):
@@ -251,8 +275,8 @@ def main():
         for item in items:
             subscription_id = item["subscription_id"]
             operation_name = item["operation_name"]
-            resource_url = item["resource_url"]
-            get_resource(credential, subscription_id, operation_name, resource_url)
+            resource_id = item["resource_id"]
+            get_resource(credential, subscription_id, operation_name, resource_id)
 
 if __name__ == "__main__":
     main()
