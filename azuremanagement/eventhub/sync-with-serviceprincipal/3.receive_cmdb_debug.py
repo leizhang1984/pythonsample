@@ -52,6 +52,10 @@ resources = [
     ]
 ]
 
+            # Microsoft.Compute/disks/delete
+            # /subscriptions/166157a8-9ce9-400b-91c7-1d42482b83d6/resourceGroups/MC_ES-RG_ES-AKS_GERMANYWESTCENTRAL/providers/Microsoft.Compute/disks/pvc-4c6f3599-c701-4ea1-b55d-6e2f50bef6f7
+
+
 # 使用服务主体进行身份验证
 tenant_id = os.environ.get('nonprod_tenantid')
 client_id = os.environ.get('nonprod_clientid')
