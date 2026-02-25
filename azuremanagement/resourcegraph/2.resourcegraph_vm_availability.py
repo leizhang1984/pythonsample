@@ -47,6 +47,7 @@ def main():
             | summarize privateIPs = make_list(ipConfig.properties.privateIPAddress) by vmName
             ) on $left.VMName == $right.vmName
             | project Timestamp, ResourceId, Sub, RG, VMName, Context, Category, ImpactType, AnnotationName, Reason, Summary, privateIPs 
+            | where VMName contains "-"
             | order by Timestamp asc''',
         subscriptions=subscriptions
     )
