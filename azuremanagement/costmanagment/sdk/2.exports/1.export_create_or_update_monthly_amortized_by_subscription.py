@@ -70,6 +70,8 @@ def main():
                         "dataVersion": "2021-10-01",
                         "filters": []
                     },
+                    #csv里面的数据详细信息，是按照每日分摊的
+                    #不能改动下面的值
                     "granularity": "Daily",
                 }
                 },
