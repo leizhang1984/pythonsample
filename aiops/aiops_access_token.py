@@ -2,7 +2,8 @@ import os
 import re
 from datetime import datetime, timedelta
 import pytz
-from openai import AzureOpenAI
+from openai import OpenAI
+
 from azure.core.credentials import AccessToken, TokenCredential
 from azure.identity import ClientSecretCredential
 from azure.mgmt.compute import ComputeManagementClient
@@ -18,7 +19,7 @@ from azure.kusto.data import KustoClient, KustoConnectionStringBuilder
 input_prompt = ""
 
 #在这里描述问题
-default_prompt = "请帮我找内网为10.92.0.73这台虚拟机,在北京时间2025年12月21日上午3点33分有没有问题。"
+default_prompt = "请帮我看一下，10.83.4.200这台虚拟机，在北京时间2026年5月8日上午10点00分有没有问题。"
 
 class MyTokenCredential(TokenCredential):
     def __init__(self, token):
@@ -48,7 +49,7 @@ def get_vm_resource_graph_byip(clientcredential, private_ip_address):
         query = QueryRequest(
             query=f'''Resources
                         | where type =~ 'microsoft.compute/virtualmachines'
-                        | project subscriptionId, vmId = tolower(tostring(id)), vmName = name, resourceGroup = resourceGroup, vmUniqueid = properties.vmId
+                        | project subscriptionId, vmId = tolower(tostring(id)), vmName = name, resourceGroup = resourceGroup, vmUniqueid = properties.vmId, vmsize= properties.hardwareProfile.vmSize
                         | join (Resources
                             | where type =~ 'microsoft.network/networkinterfaces'
                             | mv-expand ipconfig=properties.ipConfigurations
@@ -62,7 +63,7 @@ def get_vm_resource_graph_byip(clientcredential, private_ip_address):
                             | project-away publicIpId, publicIpId1
                             | summarize privateIps = make_list(privateIp), publicIps = make_list(publicIp) by vmId
                         ) on vmId
-                        | project  vmId,subscriptionId, vmName, vmUniqueid, resourceGroup, privateIps, publicIps
+                        | project  vmId,subscriptionId, vmName, vmUniqueid, resourceGroup, privateIps, publicIps, vmsize
                         | where privateIps contains '{private_ip_address}'
                         | sort by vmName asc ''',
             subscriptions=subscriptions
@@ -81,7 +82,10 @@ def get_vm_resource_graph_byip(clientcredential, private_ip_address):
                 #新加的Unique Id
                 query_response.data[0]['vmUniqueid'],
                 query_response.data[0]['resourceGroup'],
-                query_response.data[0]['privateIps']
+                query_response.data[0]['privateIps'],
+
+                #虚拟机Size
+                query_response.data[0]['vmsize']
             )
         else:
             print(f"找到多台虚拟机，内网IP都是 {private_ip_address}")
@@ -223,6 +227,7 @@ def get_vm_monitor_metrics(clientcredential,subscription_id, rg_name, vm_name, v
     metric_name += ",OS Disk Bandwidth Consumed Percentage,OS Disk IOPS Consumed Percentage"
     metric_name += ",Data Disk Bandwidth Consumed Percentage,Data Disk IOPS Consumed Percentage"
     metric_name += ",OS Disk Queue Depth,Data Disk Queue Depth"
+    metric_name += ",VM Uncached Bandwidth Consumed Percentage,VM Uncached IOPS Consumed Percentage"
 
     #aggregation = "average,total"
     aggregation = "Maximum"
@@ -262,16 +267,16 @@ def get_vm_monitor_metrics(clientcredential,subscription_id, rg_name, vm_name, v
                 #     print(f"Count: {data.count}")
 
 
-def request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time):
+def request_ai_foundary_final(subscription_id,rg_name,vm_name,private_ip,issue_time, vmszie):
     # Initialize the Azure OpenAI client
-    client = AzureOpenAI(
-        azure_endpoint = os.environ.get('azure_openai_endpoint'),
-        api_key = os.environ.get('azure_openai_key'),
-        api_version = "2023-08-01-preview"
+    client = OpenAI(
+        base_url="https://leizha-foundry01.services.ai.azure.com/openai/v1",
+        api_key=""
     )
+
     # 定义 prompt
     #10.100.208.4
-    default_prompt = f"订阅ID为:{subscription_id}, 资源组名称为:{rg_name}, 虚拟机名称为: {vm_name}, 内网IP地址: {private_ip}, 在问题发生时间: {issue_time} \n"
+    default_prompt = f"订阅ID为:{subscription_id}, 资源组名称为:{rg_name}, 虚拟机名称为: {vm_name}, 内网IP地址: {private_ip}, 虚拟机规格: {vmszie}, 在问题发生时间: {issue_time} \n"
     prompt = default_prompt + input_prompt
 
     # Define the messages for the chat completion
@@ -332,7 +337,7 @@ def request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time):
     ]
 
     response = client.chat.completions.create(
-        model = "gpt-4.1",  # Replace with your deployed model name
+        model = "gpt-5.4",  # Replace with your deployed model name
         messages = messages,
         #temperature = 0.7,  # Optional: Controls randomness of output
         #max_tokens = 150    # Optional: Limits the length of the response
@@ -483,12 +488,11 @@ def adx_AirManagedEvents(tenant_id, client_id, client_secret, adx_cluster_url, a
 
 
 
-def request_openai():
+def request_ai_foundary():
     # Initialize the Azure OpenAI client
-    client = AzureOpenAI(
-        azure_endpoint = os.environ.get('azure_openai_endpoint'),
-        api_key = os.environ.get('azure_openai_key'),
-        api_version = "2023-08-01-preview"
+    client = OpenAI(
+        base_url="https://leizha-foundry01.services.ai.azure.com/openai/v1",
+        api_key=""
     )
     # 定义 prompt
     #10.100.208.4
@@ -505,7 +509,7 @@ def request_openai():
     ]
 
     response = client.chat.completions.create(
-        model = "gpt-4.1",  # Replace with your deployed model name
+        model = "gpt-5.4",  # Replace with your deployed model name
         messages = messages,
         #temperature = 0.7,  # Optional: Controls randomness of output
         #max_tokens = 150    # Optional: Limits the length of the response
@@ -524,11 +528,11 @@ def request_openai():
 
 def main():
 
-    private_ip, issue_time, issue_time_utc = request_openai()
+    private_ip, issue_time, issue_time_utc = request_ai_foundary()
     #vm_uniqueid 是新加入的
     # clientcredential = ClientSecretCredential(tenant_id, client_id, client_secret)
 
-    vm_id, subscription_id,vm_name, vm_uniqueid, rg_name, private_ip = get_vm_resource_graph_byip(clientcredential, private_ip)
+    vm_id, subscription_id,vm_name, vm_uniqueid, rg_name, private_ip, vmsize = get_vm_resource_graph_byip(clientcredential, private_ip)
     get_vm_activity_log(clientcredential,subscription_id,rg_name,vm_name,vm_id,issue_time)
     get_vm_resource_health(clientcredential,subscription_id,rg_name,vm_name,vm_id)
     get_vm_monitor_metrics(clientcredential,subscription_id,rg_name,vm_name,vm_id,issue_time)
@@ -538,7 +542,7 @@ def main():
     # adx_diskioblip(tenant_id, client_id, client_secret, "https://jt-grafana-adx.germanywestcentral.kusto.windows.net", "grafana", vm_uniqueid, issue_time_utc)
     # adx_AirManagedEvents(tenant_id, client_id, client_secret, "https://jt-grafana-adx.germanywestcentral.kusto.windows.net", "grafana", vm_uniqueid, issue_time_utc)
 
-    request_openai_final(subscription_id,rg_name,vm_name,private_ip,issue_time)
+    request_ai_foundary_final(subscription_id,rg_name,vm_name,private_ip,issue_time,vmsize)
 
     
      
