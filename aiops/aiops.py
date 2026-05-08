@@ -17,7 +17,7 @@ from azure.kusto.data import KustoClient, KustoConnectionStringBuilder
 input_prompt = ""
 
 #在这里描述问题
-default_prompt = "请帮我找内网为10.99.76.10这台虚拟机,在北京时间2025年12月22日下午1点50分有没有问题。"
+default_prompt = "请帮我看一下，10.83.4.200这台虚拟机，在北京时间2026年5月8日上午10点00分有没有问题。"
 
 # 通过内网ip，获得虚拟机的资源id，资源组和虚拟机名称
 def get_vm_resource_graph_byip(clientcredential, private_ip_address):
@@ -209,6 +209,7 @@ def get_vm_monitor_metrics(clientcredential,subscription_id, rg_name, vm_name, v
     metric_name += ",OS Disk Bandwidth Consumed Percentage,OS Disk IOPS Consumed Percentage"
     metric_name += ",Data Disk Bandwidth Consumed Percentage,Data Disk IOPS Consumed Percentage"
     metric_name += ",OS Disk Queue Depth,Data Disk Queue Depth"
+    metric_name += ",VM Uncached Bandwidth Consumed Percentage,VM Uncached IOPS Consumed Percentage"
 
     #aggregation = "average,total"
     aggregation = "Maximum"
