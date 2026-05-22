@@ -19,11 +19,13 @@ from azure.kusto.data import KustoClient, KustoConnectionStringBuilder
 input_prompt = ""
 
 #在这里描述问题
-default_prompt = "请帮我看一下，10.94.109.31这台虚拟机，在北京时间2026年5月19日上午9点00分有没有问题。"
+#default_prompt = "请帮我看一下，10.94.6.12这台虚拟机，在北京时间2026年5月19日下午8点20分有没有问题。"
+
+default_prompt = "请帮我看一下，10.94.109.31这台虚拟机，在北京时间2026年5月19日上午8点50分有没有问题。"
 
 ai_foundary_endpoint = "https://leizha-foundry01.services.ai.azure.com/openai/v1"
 # 替换为你的部署名称
-ai_foundary_deployment_model = "" 
+ai_foundary_deployment_model = "gpt-5.4" 
 # AI Foundary的Key
 ai_foundary_key = ""
 
@@ -41,23 +43,38 @@ def get_vm_resource_graph_byip(clientcredential, private_ip_address):
         # Basic query
         query = QueryRequest(
             query=f'''Resources
-                        | where type =~ 'microsoft.compute/virtualmachines'
-                        | project subscriptionId, vmId = tolower(tostring(id)), vmName = name, resourceGroup = resourceGroup, vmUniqueid = properties.vmId, vmsize= properties.hardwareProfile.vmSize
-                        | join (Resources
-                            | where type =~ 'microsoft.network/networkinterfaces'
-                            | mv-expand ipconfig=properties.ipConfigurations
-                            | project vmId = tolower(tostring(properties.virtualMachine.id)), 
-                                    privateIp = ipconfig.properties.privateIPAddress, 
-                                    publicIpId = tostring(ipconfig.properties.publicIPAddress.id)
-                            | join kind=leftouter (Resources
-                                | where type =~ 'microsoft.network/publicipaddresses'
-                                | project publicIpId = id, publicIp = properties.ipAddress
-                            ) on publicIpId
-                            | project-away publicIpId, publicIpId1
-                            | summarize privateIps = make_list(privateIp), publicIps = make_list(publicIp) by vmId
+                        | where type =~ 'microsoft.network/networkinterfaces'
+                        | mv-expand ipconfig = properties.ipConfigurations
+                        | extend
+                            vmId = tolower(tostring(properties.virtualMachine.id)),
+                            privateIp = tostring(ipconfig.properties.privateIPAddress),
+                            publicIpId = tolower(tostring(ipconfig.properties.publicIPAddress.id))
+                        | where privateIp == '{private_ip_address}'
+                        | join kind=leftouter (
+                            Resources
+                            | where type =~ 'microsoft.network/publicipaddresses'
+                            | extend
+                                publicIpId = tolower(tostring(id)),
+                                publicIp = tostring(properties.ipAddress)
+                            | project publicIpId, publicIp
+                        ) on publicIpId
+                        | join kind=inner (
+                            Resources
+                            | where type =~ 'microsoft.compute/virtualmachines'
+                            | extend vmId = tolower(tostring(id))
+                            | project
+                                vmId,
+                                subscriptionId,
+                                vmName = name,
+                                vmUniqueid = tostring(properties.vmId),
+                                resourceGroup,
+                                vmsize = tostring(properties.hardwareProfile.vmSize)
                         ) on vmId
-                        | project  vmId,subscriptionId, vmName, vmUniqueid, resourceGroup, privateIps, publicIps, vmsize
-                        | where privateIps contains '{private_ip_address}'
+                        | summarize
+                            privateIps = make_set(privateIp),
+                            publicIps = make_set(publicIp)
+                            by vmId, subscriptionId, vmName, vmUniqueid, resourceGroup, vmsize
+                        | project vmId, subscriptionId, vmName, vmUniqueid, resourceGroup, privateIps, publicIps, vmsize
                         | sort by vmName asc ''',
             subscriptions=subscriptions
         )
@@ -223,6 +240,7 @@ def get_vm_monitor_metrics(clientcredential,subscription_id, rg_name, vm_name, v
     metric_name += ",Data Disk Bandwidth Consumed Percentage,Data Disk IOPS Consumed Percentage"
     metric_name += ",OS Disk Queue Depth,Data Disk Queue Depth"
     metric_name += ",VM Uncached Bandwidth Consumed Percentage,VM Uncached IOPS Consumed Percentage"
+    metric_name += ",OS Disk Latency,Data Disk Latency"
 
     #aggregation = "average,total"
     aggregation = "Maximum"
@@ -321,11 +339,13 @@ def request_ai_foundary_final(subscription_id,rg_name,vm_name,private_ip,issue_t
                 # "通过Azure底层的补丁更新, 发现虚拟机磁盘事件: XXXXX  \n"
                 
 
-                "第1部分,根据目前的性能指标，发现可能存在的性能瓶颈和问题是： \n"
+                # "第1部分,根据目前的性能指标，发现可能存在的性能瓶颈和问题是： \n"
 
-                "第2部分,优化建议是 \n"
+                # "第2部分,优化建议是 \n"
 
-                "第3部分,如果在这个时间段内有发现性能问题，主要问题是:xxxxx，建议的方案是。如果没有发现性能问题，则建议持续观察 \n"
+                # "第3部分,当前时间的最终判断 \n"
+
+                "我给出的专家结论是： "
             )
         },
         {"role": "user", "content": f"{prompt}"}
@@ -351,135 +371,6 @@ def request_ai_foundary_final(subscription_id,rg_name,vm_name,private_ip,issue_t
 
     print(f"内容已导出到 {file_name}")
     
-
-#ping tor
-def adx_pingtorlower100(tenant_id, client_id, client_secret, adx_cluster_url, adx_cluster_database, vm_uniqueid, issue_time_utc):
-    # 解析时间字符串为 datetime 对象
-    initial_time = datetime.strptime(issue_time_utc, '%Y/%m/%d %H:%M:%S.%f')
-    # 往前30分钟
-    issue_time_start = initial_time - timedelta(minutes=30)
-    # 往后30分钟
-    issue_time_end = initial_time + timedelta(minutes=30)
-
-    # 使用Service Principal认证
-    credential = ClientSecretCredential(tenant_id, client_id, client_secret)
-
-    # 构建Kusto连接字符串
-    kcsb = KustoConnectionStringBuilder.with_aad_application_key_authentication(adx_cluster_url, client_id, client_secret, tenant_id)
-
-    # 创建Kusto客户端
-    adx_client = KustoClient(kcsb)
-
-    # 构建查询语句
-    query = f"""
-    let starttime = datetime('{issue_time_start}');
-    let endtime = datetime('{issue_time_end}');
-
-    pingtorlower100 
-    | extend chinatime = datetime_utc_to_local(todatetime(TIMESTAMP),'Asia/Shanghai')
-    | where TIMESTAMP between (starttime .. endtime) 
-    | where virtualMachineUniqueId == '{vm_uniqueid}'
-    | distinct TIMESTAMP,chinatime, RegionFriendlyName, subscriptionId, Cluster, nodeId, vmname, virtualMachineUniqueId,Availability, SendCount, RecvCount, TimeWindowInMinutes
-    """
-
-    # 执行查询
-    response = adx_client.execute(adx_cluster_database, query)
-    global input_prompt
-    if len(response.primary_results[0]) == 0:
-
-        input_prompt += "在指定时间范围内，没有发现ping丢包的数据。\n"
-    else:
-        # 遍历每一行结果
-        for record in response.primary_results[0]:
-            input_prompt += f"在北京时间:{record['chinatime']}, 通过Azure底层的监控, 发现虚拟机所在物理机ping的数据, 发送ping数量为: {record['SendCount']}, 接受ping数量为: {record['RecvCount']}, ping成功率为: {record['Availability']} \n"
-
-
-#磁盘抖动
-def adx_diskioblip(tenant_id, client_id, client_secret, adx_cluster_url, adx_cluster_database, vm_uniqueid, issue_time_utc):
-     # 解析时间字符串为 datetime 对象
-    initial_time = datetime.strptime(issue_time_utc, '%Y/%m/%d %H:%M:%S.%f')
-    # 往前30分钟
-    issue_time_start = initial_time - timedelta(minutes=30)
-    # 往后30分钟
-    issue_time_end = initial_time + timedelta(minutes=30)
-
-    # 使用Service Principal认证
-    credential = ClientSecretCredential(tenant_id, client_id, client_secret)
-
-    # 构建Kusto连接字符串
-    kcsb = KustoConnectionStringBuilder.with_aad_application_key_authentication(adx_cluster_url, client_id, client_secret, tenant_id)
-
-    # 创建Kusto客户端
-    adx_client = KustoClient(kcsb)
-
-    # 构建查询语句
-    query = f"""
-    let starttime = datetime('{issue_time_start}');
-    let endtime = datetime('{issue_time_end}');
-
-    diskioblip 
-    | extend chinatime = datetime_utc_to_local(todatetime(EventTime),'Asia/Shanghai')
-    | where EventTime between (starttime .. endtime) 
-    | where VirtualMachineUniqueId == '{vm_uniqueid}'
-    | distinct EventTime,chinatime, EventType, RCAType, RCALevel1,RCALevel2,RCALevel3, SubscriptionId,Cluster, NodeId,ContainerId, VirtualMachineUniqueId, DiskType, DiskTier, DiskSize, DiskPath, BlobPath, StorageAccount, StorageCluster
-    """
-
-    # 执行查询
-    response = adx_client.execute(adx_cluster_database, query)
-    
-    global input_prompt
-
-    if len(response.primary_results[0]) == 0:
-        input_prompt += "在指定时间范围内，没有发现磁盘抖动的事件。\n"
-    else:
-        # 遍历每一行结果
-        for record in response.primary_results[0]:
-            input_prompt += f"在北京时间:{record['chinatime']}, 通过Azure底层的存储集群, 发现磁盘事件: {record['EventType']}, RCAType: {record['RCAType']},  RCALevel1: {record['RCALevel1']} \n"
-
-
-
-# 系统底层运维
-def adx_AirManagedEvents(tenant_id, client_id, client_secret, adx_cluster_url, adx_cluster_database, vm_uniqueid, issue_time_utc):
-     # 解析时间字符串为 datetime 对象
-    initial_time = datetime.strptime(issue_time_utc, '%Y/%m/%d %H:%M:%S.%f')
-    # 往前30分钟
-    issue_time_start = initial_time - timedelta(minutes=30)
-    # 往后30分钟
-    issue_time_end = initial_time + timedelta(minutes=30)
-
-    # 使用Service Principal认证
-    credential = ClientSecretCredential(tenant_id, client_id, client_secret)
-
-    # 构建Kusto连接字符串
-    kcsb = KustoConnectionStringBuilder.with_aad_application_key_authentication(adx_cluster_url, client_id, client_secret, tenant_id)
-
-    # 创建Kusto客户端
-    adx_client = KustoClient(kcsb)
-
-    # 构建查询语句
-    query = f"""
-    let starttime = datetime('{issue_time_start}');
-    let endtime = datetime('{issue_time_end}');
-
-    airmanagedevents 
-    | extend chinatime = datetime_utc_to_local(todatetime(EventDate),'Asia/Shanghai')
-    | where EventDate between (starttime .. endtime) 
-    | where VirtualMachineUniqueId == '{vm_uniqueid}'
-    | distinct EventDate, EventType, RegionFriendlyName,  Cluster, VirtualMachineUniqueId,rolename ,RoleInstanceName, NodeId, Duration, RCALevel1, RCALevel2, RCALevel3, TenantName,ingestTime,diff    
-    """
-
-    # 执行查询
-    response = adx_client.execute(adx_cluster_database, query)
-    
-    global input_prompt
-    if len(response.primary_results[0]) == 0:
-        input_prompt += "在指定时间范围内，没有发现虚拟机底层有补丁更新事件。\n"
-    else:
-        # 遍历每一行结果
-        for record in response.primary_results[0]:
-            input_prompt += f"在北京时间:{record['chinatime']}, 通过Azure底层的补丁更新, 发现虚拟机补丁更新事件: {record['EventType']} \n"
-
-
 
 
 
@@ -536,11 +427,6 @@ def main():
     get_vm_activity_log(clientcredential,subscription_id,rg_name,vm_name,vm_id,issue_time)
     get_vm_resource_health(clientcredential,subscription_id,rg_name,vm_name,vm_id)
     get_vm_monitor_metrics(clientcredential,subscription_id,rg_name,vm_name,vm_id,issue_time)
-
-    #底层数据
-    # adx_pingtorlower100(tenant_id, client_id, client_secret, "https://jt-grafana-adx.germanywestcentral.kusto.windows.net", "grafana", vm_uniqueid, issue_time_utc)
-    # adx_diskioblip(tenant_id, client_id, client_secret, "https://jt-grafana-adx.germanywestcentral.kusto.windows.net", "grafana", vm_uniqueid, issue_time_utc)
-    # adx_AirManagedEvents(tenant_id, client_id, client_secret, "https://jt-grafana-adx.germanywestcentral.kusto.windows.net", "grafana", vm_uniqueid, issue_time_utc)
 
     request_ai_foundary_final(subscription_id,rg_name,vm_name,private_ip,issue_time,vmsize)
 
