@@ -46,6 +46,8 @@ AI Ops说明文档：
 
 ​	5.输入完毕后，就有三个值：
 
+​	**Application id、tenant id、还有app key**
+
 ![](https://github.com/leizhang1984/pythonsample/blob/main/aiops/images/5sp.png)
 
 ​	6.然后我们分配权限，选择对应的管理组或者订阅，如下图：
@@ -62,9 +64,13 @@ AI Ops说明文档：
 
 ​	9.然后创建azure ai foundary，步骤略
 
+![](https://github.com/leizhang1984/pythonsample/blob/main/aiops/images/9foundry.png)
+
 ​	10.在ai foundary里部署模型，这里模型名称为：gpt-5.4
 
-​	11.拿到ai foundary的api key
+​	11.拿到ai foundary的api key。如下图：
+
+![](https://github.com/leizhang1984/pythonsample/blob/main/aiops/images/10foundrykey.png)
 
 
 
@@ -72,3 +78,16 @@ AI Ops说明文档：
 
 三.运行环境
 
+1. 用vscode代码aiops.py
+2. 把上面步骤2-5里面的application id, tenant id和app key更新到ai代码：
+   1. 417行中，tenant id 
+   2. 418行中，client id就是application id
+   3. 419行中，client_secret就是app key
+3. 修改ai foundary
+   1. 26行，更新ai_foundry_endpoint
+   2. 28行，更新你的模型
+   3. 30行，输入的ai foundry的key
+
+​	4.修改提示词，在第24行
+
+​	
