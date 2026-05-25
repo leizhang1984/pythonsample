@@ -38,4 +38,37 @@ AI Ops说明文档：
 
 ![](https://github.com/leizhang1984/pythonsample/blob/main/aiops/images/3newapp.png)
 
-​	4.
+​	4.输入app secret，如下图：
+
+**请保留下面的secret的值，后续需要使用**
+
+![](https://github.com/leizhang1984/pythonsample/blob/main/aiops/images/4newsecret.png)
+
+​	5.输入完毕后，就有三个值：
+
+![](https://github.com/leizhang1984/pythonsample/blob/main/aiops/images/5sp.png)
+
+​	6.然后我们分配权限，选择对应的管理组或者订阅，如下图：
+
+![](https://github.com/leizhang1984/pythonsample/blob/main/aiops/images/6assign.png)
+
+​	7.分配reader权限
+
+![](https://github.com/leizhang1984/pythonsample/blob/main/aiops/images/7reader.png)
+
+​	8.找到之前创建的服务账户
+
+![](https://github.com/leizhang1984/pythonsample/blob/main/aiops/images/8assign-reader.png)
+
+​	9.然后创建azure ai foundary，步骤略
+
+​	10.在ai foundary里部署模型，这里模型名称为：gpt-5.4
+
+​	11.拿到ai foundary的api key
+
+
+
+
+
+三.运行环境
+
