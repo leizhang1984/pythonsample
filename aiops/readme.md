@@ -6,18 +6,19 @@ AI Ops说明文档：
 2. 把上面的问题进行分析，通过Azure Resource Graph Explorer查询到ip对应的虚拟机
 3. 基于Azure Resource Health健康日志，Activity Log活动日志、Azure Monitor等指标，检查虚拟机是否有性能问题
 4. Azure Monitor中的指标有：
-   1. Percentage CPU
-   2. Available Memory Percentage
-   3. VmAvailabilityMetric
-   4. OS Disk Bandwidth Consumed Percentage
-   5. OS Disk IOPS Consumed Percentage
-   6. Data Disk Bandwidth Consumed Percentage
-   7. Data Disk IOPS Consumed Percentage
-   8. OS Disk Queue Depth
-   9. Data Disk Queue Depth
-   10. VM Uncached Bandwidth Consumed Percentage
-   11. VM Uncached IOPS Consumed Percentage
-   12. Data Disk Latency
+   1. Percentage CPU，CPU使用率
+   2. Available Memory Percentage，可用内存百分比
+   3. VmAvailabilityMetric，VM平台可用性状态
+   4. OS Disk Bandwidth Consumed Percentage，操作系统磁盘的带宽使用百分比
+   5. OS Disk IOPS Consumed Percentage，操作系统磁盘的IOPS使用百分比
+   6. Data Disk Bandwidth Consumed Percentage，数据磁盘的带宽使用百分比
+   7. Data Disk IOPS Consumed Percentage，数据磁盘的IOPS使用百分比
+   8. OS Disk Queue Depth，系统盘队列深度
+   9. Data Disk Queue Depth，数据盘队列深度
+   10. VM Uncached Bandwidth Consumed Percentage，虚拟机未缓存的带宽使用百分比，来判断虚拟机是否有到磁盘的带宽瓶颈
+   11. VM Uncached IOPS Consumed Percentage，虚拟机未缓存的IOPS使用百分比，来判断虚拟机是否有到磁盘的IOPS瓶颈
+   12. OS Disk Latency，操作系统磁盘延迟
+   13. Data Disk Latency，数据盘延迟
 5. 通过把这些事件和指标发送给azure AI foundary，通过AI来决策是否虚拟机有性能问题
 
 
