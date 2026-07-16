@@ -102,6 +102,8 @@ def get_foundry_monitor_metrics(clientcredential):
                         metric_name += ",TotalTokens,ModelRequests"
 
                         aggregation = "Total"
+                        # 1小时聚合的话 就是PT1H，
+                        # 1天,聚合就是P1D
                         interval = "P1D"
 
                         metric_result = monitor_client.metrics.list(
