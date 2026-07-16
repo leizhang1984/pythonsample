@@ -25,7 +25,7 @@ class StaticTokenCredential:
 def main():
     # access_token 可以通过 Azure CLI 获取：
     # az account get-access-token
-    
+
     access_token = ""
     clientcredential = StaticTokenCredential(access_token)
 
@@ -61,6 +61,8 @@ def get_foundry_monitor_metrics(clientcredential):
         csv_writer = csv.writer(out_file)
 
         csv_writer.writerow([
+            "Subscription Name",
+            "Subscription ID",
             "Foundry Name",
             "Location",
             "ModelName",
@@ -69,8 +71,10 @@ def get_foundry_monitor_metrics(clientcredential):
             "Value",
         ])
 
-        def out(foundry_name, location, model_name, metric_name, beijing_time_str, value):
+        def out(subscription_name, subscription_id, foundry_name, location, model_name, metric_name, beijing_time_str, value):
             row = [
+                subscription_name,
+                subscription_id,
                 foundry_name,
                 location,
                 model_name,
@@ -125,6 +129,8 @@ def get_foundry_monitor_metrics(clientcredential):
                                         beijing_time_str = beijing_time.strftime("%Y-%m-%d %H:%M:%S")
 
                                         out(
+                                            sub.display_name,
+                                            sub.subscription_id,
                                             account.name,
                                             account.location,
                                             model_name,
