@@ -29,6 +29,7 @@ def main():
     # az account get-access-token
 
     access_token = ""
+
     clientcredential = StaticTokenCredential(access_token)
 
     #如果是service principal访问的，请先设置Service Principal的权限为reader
@@ -45,17 +46,22 @@ FOUNDRY_KINDS = {"AIServices", "OpenAI", "AIHub"}
 
 
 def get_foundry_monitor_metrics(clientcredential):
-    now = datetime.now(timezone.utc)
-
-    # 2026年7月1日 08:00:00 UTC
-    start_time = datetime(2026, 7, 16, 8, 0, 0, tzinfo=timezone.utc)
-
-    start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
-    end_time_str = now.strftime("%Y-%m-%dT%H:%M:%SZ")
-    timespan = f"{start_time_str}/{end_time_str}"
-
     utc = pytz.utc
     beijing_tz = pytz.timezone("Asia/Shanghai")
+
+    # 输入时间是北京时间：2026年7月26日 08:00:00
+    start_time_beijing  = datetime(2026, 7, 26, 0, 0, 0)
+
+    # 转换成UTC
+    start_time_utc = start_time_beijing.astimezone(utc)
+
+    # 当前UTC时间
+    now_utc = datetime.now(utc)
+
+    start_time_str = start_time_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    end_time_str = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    timespan = f"{start_time_str}/{end_time_str}"
 
     out_name = "foundry_metrics_" + datetime.now(beijing_tz).strftime("%Y%m%d_%H%M%S") + ".csv"
 
@@ -178,7 +184,11 @@ def get_foundry_monitor_metrics(clientcredential):
             )
 
             aggregation = "Total"
-            interval = "P1D"
+
+            #1小时聚合，PT1H
+            #1天聚合，P1D
+
+            interval = "PT1H"
 
             metric_result = monitor_client.metrics.list(
                 resource_id,
