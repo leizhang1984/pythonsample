@@ -10,7 +10,7 @@ from azure.identity import ClientSecretCredential
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.resource import ResourceManagementClient
-from azure.mgmt.resource.resources.models import Tags, TagsResource
+from azure.mgmt.resource.resources.models import Tags, TagsPatchResource
 from azure.mgmt.resourcegraph import ResourceGraphClient
 from azure.mgmt.resourcegraph.models import QueryRequest, QueryRequestOptions
 
@@ -27,15 +27,16 @@ IP_STRING = "10.180.1.4;10.180.1.5;10.180.1.6;10.180.1.7;10.180.1.8;10.180.1.9"
 # 明确限定查询范围，多个订阅使用分号分隔。
 SUBSCRIPTION_STRING = "" 
 
-# 全量覆盖：资源原有标签会被删除，只保留以下标签。
-REPLACEMENT_TAGS = {
-    "application": "ops",
-    "environment": "dr",
-    "owner": "platform-team",
+# 同名标签更新，不存在的标签新增，其他标签保留。
+TAGS_TO_SET = {
+    "application": "redis",
+    "environment": "production",
+    "costcenter": "S00001",
+    "owner": "leizhang",
 }
 
-# False：只输出清单，不修改。
-# True：直接覆盖标签，不进行交互确认。
+# False：只预览，不修改。
+# True：直接执行标签合并，不进行交互确认。
 APPLY_CHANGES = True
 
 # ==================================================
@@ -87,10 +88,10 @@ def parse_subscriptions(value):
 
 def validate_tags(tags):
     if not isinstance(tags, dict) or not tags:
-        raise ValueError("REPLACEMENT_TAGS 必须是非空字典。")
+        raise ValueError("TAGS_TO_SET 必须是非空字典。")
 
     if len(tags) > 50:
-        raise ValueError("标签数量不能超过 50 个。")
+        raise ValueError("本次设置的标签数量不能超过 50 个。")
 
     forbidden = set("<>%&\\?/")
 
@@ -181,7 +182,7 @@ def find_vm_matches(credential, subscriptions, ips):
                 f"'{ip}'" for ip in ip_batch
             )
 
-            # 先筛选候选网卡，再展开 IP 配置。
+            # 先筛选候选网卡，再展开 IP 配置并精确匹配。
             candidate_filter = " or ".join(
                 f"tostring(ipConfigs) contains '{ip}'"
                 for ip in ip_batch
@@ -509,17 +510,20 @@ def apply_tags(clients, plan, tags):
         client = clients.resources(subscription_id)
 
         try:
-            # 全量替换，不读取旧标签、不合并、不回读比较。
-            client.tags.begin_create_or_update_at_scope(
+            # Merge：
+            # 同名标签覆盖值；不存在的标签新增；其他标签保留。
+            # 不读取旧标签，也不执行写后回读比较。
+            client.tags.begin_update_at_scope(
                 scope=resource["id"],
-                parameters=TagsResource(
-                    properties=Tags(tags=dict(tags))
+                parameters=TagsPatchResource(
+                    operation="Merge",
+                    properties=Tags(tags=dict(tags)),
                 ),
             ).result()
 
         except AzureError as exc:
             raise RuntimeError(
-                f"覆盖标签失败：{resource['id']}\n"
+                f"合并标签失败：{resource['id']}\n"
                 f"此前已完成 {completed} 个资源。\n"
                 "当前资源可能已经写入；停止后续操作，不自动回滚。"
             ) from exc
@@ -527,7 +531,7 @@ def apply_tags(clients, plan, tags):
         completed += 1
 
         print(
-            f"[{index}/{len(plan)}] 标签覆盖请求已完成："
+            f"[{index}/{len(plan)}] 标签合并请求已完成："
             f"{resource['id']}",
             flush=True,
         )
@@ -556,7 +560,7 @@ def main():
 
     ips = parse_ips(IP_STRING)
     subscriptions = parse_subscriptions(SUBSCRIPTION_STRING)
-    tags = validate_tags(REPLACEMENT_TAGS)
+    tags = validate_tags(TAGS_TO_SET)
 
     with ClientSecretCredential(
         tenant_id=TENANT_ID,
@@ -576,8 +580,10 @@ def main():
             print("\n待处理资源：")
             print(json.dumps(plan, ensure_ascii=False, indent=2))
 
-            print("\n用于全量覆盖的标签：")
+            print("\n本次新增或更新的标签：")
             print(json.dumps(tags, ensure_ascii=False, indent=2))
+
+            print("\n标签模式：Merge，保留其他原有标签。")
 
             if not APPLY_CHANGES:
                 print("\n仅预览，未修改任何标签。")
